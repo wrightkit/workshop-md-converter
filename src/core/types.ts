@@ -25,6 +25,13 @@ export interface WorkshopArticleRaw {
   [key: string]: unknown;
 }
 
+export interface WorkshopCategoryRaw {
+  slug?: unknown;
+  title?: unknown;
+  description?: unknown;
+  [key: string]: unknown;
+}
+
 export interface WorkshopListRaw {
   data?: unknown;
   items?: unknown;

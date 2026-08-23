@@ -11,6 +11,8 @@ This service provides Markdown-first wiki access with predictable routes and con
 - `GET /` (Markdown onboarding guide)
 - `GET /healthz`
 - `GET /manifest.json` (machine-readable document manifest)
+- `GET /wiki/categories.md`
+- `GET /wiki/categories/:slug.md`
 - `GET /wiki/articles.md`
 - `GET /wiki/articles/:slug.md`
 - `GET /wiki/articles/:slug` with `Accept: text/markdown`
@@ -19,19 +21,22 @@ This service provides Markdown-first wiki access with predictable routes and con
 
 ```bash
 # Root onboarding guide
-curl https://md.owbastion.codes/
+curl https://md.wrightkit.dev/
 
 # Machine-readable document manifest (JSON, metadata only)
-curl https://md.owbastion.codes/manifest.json
+curl https://md.wrightkit.dev/manifest.json
 
 # Article index as markdown
-curl https://md.owbastion.codes/wiki/articles.md
+curl https://md.wrightkit.dev/wiki/articles.md
+
+# Workshop documentation category index
+curl https://md.wrightkit.dev/wiki/categories/actions.md
 
 # Explicit markdown route
-curl https://md.owbastion.codes/wiki/articles/hero-color-reference-table.md
+curl https://md.wrightkit.dev/wiki/articles/hero-color-reference-table.md
 
 # Content negotiation route
-curl https://md.owbastion.codes/wiki/articles/hero-color-reference-table \
+curl https://md.wrightkit.dev/wiki/articles/hero-color-reference-table \
   -H 'Accept: text/markdown'
 ```
 
@@ -68,14 +73,14 @@ Minimal flow:
 
 ```bash
 # 1. Discover documents via the manifest (metadata only, no article bodies)
-curl -s https://md.owbastion.codes/manifest.json | jq '.documents[0]'
+curl -s https://md.wrightkit.dev/manifest.json | jq '.documents[0]'
 
 # 2. Fetch an exact document using its markdownUrl
-curl -s https://md.owbastion.codes/wiki/articles/hero-color-reference-table.md
+curl -s https://md.wrightkit.dev/wiki/articles/hero-color-reference-table.md
 
 # 3. Cache safely: the ETag is the content hash, so refetch conditionally
 curl -s -D - -o /dev/null -H 'If-None-Match: "<etag from step 2>"' \
-  https://md.owbastion.codes/wiki/articles/hero-color-reference-table.md
+  https://md.wrightkit.dev/wiki/articles/hero-color-reference-table.md
 # → 304 Not Modified while the document is unchanged
 ```
 
