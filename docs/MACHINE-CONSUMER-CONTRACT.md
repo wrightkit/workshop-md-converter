@@ -1,9 +1,9 @@
 # Machine-Consumer Contract
 
-Status: Implemented (`md.owbastion.codes`, issues #38 / #39 / #40)
+Status: Implemented (`md.wrightkit.dev`, issues #38 / #39 / #40)
 Schema version: 1
 
-This document is the stable contract for machine consumers — coding agents, evaluation harnesses, and retrieval tools — of `md.owbastion.codes`. It describes the endpoints, schemas, revision semantics, caching behavior, and error handling that consumers can rely on without inspecting Worker internals.
+This document is the stable contract for machine consumers — coding agents, evaluation harnesses, and retrieval tools — of `md.wrightkit.dev`. It describes the endpoints, schemas, revision semantics, caching behavior, and error handling that consumers can rely on without inspecting Worker internals.
 
 ## 1. Purpose and neutrality
 

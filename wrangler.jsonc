@@ -6,6 +6,7 @@
   "vars": {
     "UPSTREAM_BASE_URL": "https://workshop.codes",
     "UPSTREAM_ARTICLES_PATH": "/wiki/articles.json",
+    "PUBLIC_BASE_URL": "https://md.wrightkit.dev",
     "RENDERER_VERSION": "v1",
     "CACHE_TTL_SECONDS": "300",
     "UPSTREAM_CACHE_TTL_SECONDS": "60"
