@@ -17,6 +17,8 @@ The backend is **model/harness-neutral**: it performs no search, ranking, embedd
 | `GET /wiki/articles.md` | `text/markdown; charset=utf-8` | Article index (list metadata only) |
 | `GET /wiki/articles/:slug.md` | `text/markdown; charset=utf-8` | Exact document |
 | `GET /wiki/articles/:slug` with `Accept: text/markdown` | `text/markdown; charset=utf-8` | Exact document (negotiated) |
+| `GET /wiki/categories.md` | `text/markdown; charset=utf-8` | Category index |
+| `GET /wiki/categories/:slug.md` | `text/markdown; charset=utf-8` | Articles in one category |
 | `GET /` | `text/markdown; charset=utf-8` | Human onboarding guide |
 | `GET /healthz` | `text/plain; charset=utf-8` | Liveness |
 
@@ -25,6 +27,7 @@ Notes:
 - Paths ending in `.md` are always served as Markdown regardless of `Accept`.
 - Index and article routes without `.md` require `Accept: text/markdown`; otherwise the server returns a Markdown `406 Not Acceptable` page.
 - Other `.json` paths (not `/manifest.json`) are passed through to the upstream origin untouched.
+- Category routes are metadata-only directories; category article entries link to the exact article Markdown routes.
 
 ## 3. Manifest (`GET /manifest.json`)
 

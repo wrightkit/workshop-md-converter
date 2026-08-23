@@ -11,6 +11,7 @@ import { healthRoute } from './routes/health';
 import { homeRoute } from './routes/home';
 import { manifestErrorResponse, manifestRoute, resolveManifestRoute } from './routes/manifest';
 import { markdownErrorResponse, markdownRoute, resolveMarkdownRoute } from './routes/markdown';
+import { categoryRoute, resolveCategoryRoute } from './routes/categories';
 
 async function serveManifest(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {
   const startedAt = Date.now();
@@ -67,8 +68,19 @@ export default {
       return fetch(request);
     }
 
-    const route = resolveMarkdownRoute(url.pathname);
     const wantsMarkdown = negotiateMarkdown(request, url.pathname);
+    const category = resolveCategoryRoute(url.pathname);
+    const categoryMarkdown = category.kind !== 'none';
+    if (categoryMarkdown && !wantsMarkdown && !url.pathname.endsWith('.md')) {
+      return markdownErrorResponse(
+        406,
+        'Not Acceptable',
+        'This route requires a .md URL or Accept: text/markdown',
+        env,
+      );
+    }
+
+    const route = resolveMarkdownRoute(url.pathname);
 
     if (route.kind !== 'none' && !wantsMarkdown) {
       return markdownErrorResponse(
@@ -103,7 +115,7 @@ export default {
     }
 
     try {
-      const response = await markdownRoute(request, env, ctx);
+      const response = categoryMarkdown ? await categoryRoute(request, env, ctx) : await markdownRoute(request, env, ctx);
       logRequest({
         traceId,
         route: url.pathname,
@@ -126,7 +138,7 @@ export default {
       if (error instanceof HttpError) {
         const response = markdownErrorResponse(
           error.status,
-          error.status === 404 ? 'Article Not Found' : 'Upstream Error',
+          error.status === 404 ? (categoryMarkdown ? 'Category Not Found' : 'Article Not Found') : 'Upstream Error',
           error.message,
           env,
         );

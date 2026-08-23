@@ -11,6 +11,8 @@ This service provides Markdown-first wiki access with predictable routes and con
 - `GET /` (Markdown onboarding guide)
 - `GET /healthz`
 - `GET /manifest.json` (machine-readable document manifest)
+- `GET /wiki/categories.md`
+- `GET /wiki/categories/:slug.md`
 - `GET /wiki/articles.md`
 - `GET /wiki/articles/:slug.md`
 - `GET /wiki/articles/:slug` with `Accept: text/markdown`
@@ -26,6 +28,9 @@ curl https://md.owbastion.codes/manifest.json
 
 # Article index as markdown
 curl https://md.owbastion.codes/wiki/articles.md
+
+# Workshop documentation category index
+curl https://md.owbastion.codes/wiki/categories/actions.md
 
 # Explicit markdown route
 curl https://md.owbastion.codes/wiki/articles/hero-color-reference-table.md
