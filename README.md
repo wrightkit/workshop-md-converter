@@ -28,12 +28,8 @@ curl https://md.wrightkit.dev/manifest.json
 
 # Article index as markdown
 curl https://md.wrightkit.dev/wiki/articles.md
-
 # Workshop documentation category index
 curl https://md.wrightkit.dev/wiki/categories/actions.md
-
-# Workshop documentation category index
-curl https://md.owbastion.codes/wiki/categories/actions.md
 
 # Explicit markdown route
 curl https://md.wrightkit.dev/wiki/articles/hero-color-reference-table.md
