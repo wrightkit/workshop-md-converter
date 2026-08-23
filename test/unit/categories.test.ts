@@ -52,4 +52,30 @@ describe('category routes', () => {
     expect(text).toContain('- [Abort](https://md.example/wiki/articles/abort.md)');
     expect(text).not.toContain('content:');
   });
+
+  it('fetches every upstream page before rendering the category directory', async () => {
+    const firstPage = Array.from({ length: 24 }, (_, index) => ({
+      title: `Action ${index + 1}`,
+      slug: `action-${index + 1}`,
+      category: { title: 'Actions', slug: 'actions' },
+    }));
+    const secondPage = [{ title: 'Action 25', slug: 'action-25', category: { title: 'Actions', slug: 'actions' } }];
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      return new Response(JSON.stringify(url.includes('page=2') ? secondPage : firstPage), {
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await worker.fetch(new Request('https://worker.test/wiki/categories/actions.md'), env as never);
+    const text = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(text).toContain('count: 25');
+    expect(text).toContain('- [Action 25](https://md.example/wiki/articles/action-25.md)');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain('/wiki/categories/actions.json?page=1');
+    expect(String(fetchMock.mock.calls[1]?.[0])).toContain('/wiki/categories/actions.json?page=2');
+  });
 });
