@@ -66,7 +66,12 @@ curl https://md.wrightkit.dev/wiki/articles/hero-color-reference-table \
 
 ## Agent / Machine Consumers
 
-The service exposes a small, stable machine surface for coding agents. The full contract — schema, slug rules, revision/hash semantics, caching and conditional-request behavior, error handling, and compatibility guarantees — is defined in `docs/MACHINE-CONSUMER-CONTRACT.md`. The backend is model/harness-neutral: it performs no search, ranking, or embeddings; consumers implement retrieval locally against the manifest.
+The service exposes a small, stable machine surface for coding agents. The full
+contract (covering schema, slug rules, revision/hash semantics, caching,
+conditional requests, error handling, and compatibility guarantees) is defined in
+`docs/MACHINE-CONSUMER-CONTRACT.md`. The backend is model/harness-neutral: it
+performs no search, ranking, or embeddings; consumers implement retrieval locally
+against the manifest.
 
 Minimal flow:
 
