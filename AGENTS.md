@@ -17,6 +17,7 @@
 - `docs/ADR-001-architecture.md` records the converter architecture and its rationale.
 - `docs/SPEC-COVERAGE-REPORT.md` is an acceptance-coverage snapshot. Use it as evidence to audit, then verify the live code and tests rather than treating the dated status as authoritative.
 - `package.json` and `wrangler.jsonc` are the sources of truth for local commands and Worker runtime configuration.
+- `.github/workflows/ci.yml` validates pull requests and `main`; Cloudflare Workers Builds owns production and preview deployments through the repository's Git integration.
 - `tools/check_slug_only_docs.sh` is the documentation guard for the slug-only route contract.
 - Keep repository-wide rules here. Put directory-specific rules in a nested `AGENTS.md` only when a directory gains constraints that do not apply elsewhere.
 
@@ -79,6 +80,7 @@
 - `pnpm build` runs the Wrangler dry-run build and is required for runtime or deployment-related changes.
 - `pnpm exec tsc --noEmit` is useful for TypeScript-only changes when a focused type check is sufficient.
 - `bash tools/check_slug_only_docs.sh` is required after changing `README.md`, `AGENTS.md`, or route documentation.
+- GitHub Actions is validation-only. Do not add Cloudflare credentials or Worker deployment steps to repository workflows; production and branch-preview deployment belong to Cloudflare Workers Builds.
 - Before committing, run `git diff --check`, inspect the staged diff, and stage only files owned by the task.
 - For implementation work, commit verified task-owned changes with a concise message. Do not push, amend, rewrite history, deploy, or publish without an explicit request.
 
