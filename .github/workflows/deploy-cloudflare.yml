@@ -50,7 +50,8 @@ jobs:
         id: preview
         if: >-
           github.event_name == 'pull_request' &&
-          github.event.pull_request.head.repo.full_name == github.repository
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.actor != 'dependabot[bot]'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -73,11 +74,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PREVIEW_URL: ${{ steps.preview.outputs.url }}
+          PREVIEW_SHA: ${{ github.event.pull_request.head.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
           marker='<!-- workshop-md-converter-worker-preview -->'
-          short_sha="${GITHUB_SHA:0:7}"
+          short_sha="${PREVIEW_SHA:0:7}"
           body="$(printf '%s\nCloudflare Worker preview: %s\n\nUpdated for commit `%s`.' "$marker" "$PREVIEW_URL" "$short_sha")"
           comment_id="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" --jq '.[] | select(.body | contains("<!-- workshop-md-converter-worker-preview -->")) | .id' | head -n 1)"
 
