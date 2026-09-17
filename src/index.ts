@@ -10,12 +10,38 @@ import { isJsonBypass } from './routes/api';
 import { healthRoute } from './routes/health';
 import { homeRoute } from './routes/home';
 import { manifestErrorResponse, manifestRoute, resolveManifestRoute } from './routes/manifest';
-import { markdownErrorResponse, markdownRoute, resolveMarkdownRoute } from './routes/markdown';
+import { markdownErrorResponse, markdownRoute, resolveMarkdownRoute, resolvePublicBaseUrl } from './routes/markdown';
 import { categoryRoute, resolveCategoryRoute } from './routes/categories';
+import { normalizeArticleRef } from './source/workshop-adapter';
+
+function canonicalGeneratedPathname(pathname: string): string {
+  const markdownRoute = resolveMarkdownRoute(pathname);
+  if (markdownRoute.kind === 'index') return '/wiki/articles';
+  if (markdownRoute.kind === 'article') return `/wiki/articles/${normalizeArticleRef(markdownRoute.ref)}`;
+
+  const categoryRoute = resolveCategoryRoute(pathname);
+  if (categoryRoute.kind === 'index') return '/wiki/categories';
+  if (categoryRoute.kind === 'category') return `/wiki/categories/${categoryRoute.slug}`;
+
+  return pathname;
+}
+
+function generatedCacheScope(request: Request, env: Env): string {
+  return [resolvePublicBaseUrl(request, env), env.UPSTREAM_BASE_URL, env.UPSTREAM_ARTICLES_PATH].join('|');
+}
+
+function generatedCacheKey(request: Request, env: Env, pathname: string, variant: string): string {
+  return buildCacheKey(
+    canonicalGeneratedPathname(pathname),
+    variant,
+    env.RENDERER_VERSION,
+    generatedCacheScope(request, env),
+  );
+}
 
 async function serveManifest(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {
   const startedAt = Date.now();
-  const cacheKey = buildCacheKey('/manifest.json', 'json', env.RENDERER_VERSION);
+  const cacheKey = generatedCacheKey(request, env, '/manifest.json', 'json');
   const cacheUrl = generatedCacheUrl(cacheKey);
 
   const cached = await cacheLookup(cacheUrl);
@@ -71,32 +97,14 @@ export default {
     const wantsMarkdown = negotiateMarkdown(request, url.pathname);
     const category = resolveCategoryRoute(url.pathname);
     const categoryMarkdown = category.kind !== 'none';
-    if (categoryMarkdown && !wantsMarkdown && !url.pathname.endsWith('.md')) {
-      return markdownErrorResponse(
-        406,
-        'Not Acceptable',
-        'This route requires a .md URL or Accept: text/markdown',
-        env,
-      );
-    }
-
     const route = resolveMarkdownRoute(url.pathname);
 
-    if (route.kind !== 'none' && !wantsMarkdown) {
-      return markdownErrorResponse(
-        406,
-        'Not Acceptable',
-        'This route requires a .md URL or Accept: text/markdown',
-        env,
-      );
-    }
-
-    if (route.kind === 'none' && !wantsMarkdown) {
+    if (route.kind === 'none' && !categoryMarkdown && !wantsMarkdown) {
       return fetch(request);
     }
 
     const traceId = crypto.randomUUID();
-    const cacheKey = buildCacheKey(url.pathname, 'markdown', env.RENDERER_VERSION);
+    const cacheKey = generatedCacheKey(request, env, url.pathname, 'markdown');
     const cacheUrl = generatedCacheUrl(cacheKey);
 
     const cached = await cacheLookup(cacheUrl);

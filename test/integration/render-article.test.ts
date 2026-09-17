@@ -32,19 +32,22 @@ describe('render article integration', () => {
     expect(Number(res.headers.get('x-markdown-tokens'))).toBeGreaterThan(0);
     expect(text).toContain('title: Workshop Markdown Converter Guide');
     expect(text).toContain('# Workshop Markdown Converter');
-    expect(text).toContain('Start here: `/wiki/articles.md`');
-    expect(text).toContain('curl https://md.wrightkit.dev/wiki/articles.md');
-    expect(text).toContain('Accept: text/markdown');
+    expect(text).toContain('Start here: `/wiki/articles`');
+    expect(text).toContain('curl https://md.wrightkit.dev/wiki/articles');
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('returns markdown 406 for article route without .md when markdown is not accepted', async () => {
-    const fetchMock = vi.fn(async () => new Response('ok'));
+  it('renders an article route without .md by default', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      title: 'How To Use Loops',
+      content: '# Loop Guide',
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
     vi.stubGlobal('fetch', fetchMock);
 
-    const req = new Request('https://worker.test/wiki/articles/hero-color-reference-table', {
-      headers: { accept: 'text/html' },
-    });
+    const req = new Request('https://worker.test/wiki/articles/how-to-use-loops');
 
     const env = {
       UPSTREAM_BASE_URL: 'https://workshop.codes',
@@ -56,20 +59,23 @@ describe('render article integration', () => {
     const res = await worker.fetch(req, env as never);
     const text = await res.text();
 
-    expect(res.status).toBe(406);
+    expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toContain('text/markdown');
-    expect(text).toContain('title: Not Acceptable');
-    expect(text).toContain('# Not Acceptable');
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(text).toContain('slug: how-to-use-loops');
+    expect(text).toContain('# Loop Guide');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it('returns markdown 406 for index route without .md when markdown is not accepted', async () => {
-    const fetchMock = vi.fn(async () => new Response('ok'));
+  it('renders the article index without .md by default', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([
+      { title: 'How To Use Loops', slug: 'how-to-use-loops' },
+    ]), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
     vi.stubGlobal('fetch', fetchMock);
 
-    const req = new Request('https://worker.test/wiki/articles', {
-      headers: { accept: 'text/html' },
-    });
+    const req = new Request('https://worker.test/wiki/articles');
 
     const env = {
       UPSTREAM_BASE_URL: 'https://workshop.codes',
@@ -81,11 +87,11 @@ describe('render article integration', () => {
     const res = await worker.fetch(req, env as never);
     const text = await res.text();
 
-    expect(res.status).toBe(406);
+    expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toContain('text/markdown');
-    expect(text).toContain('title: Not Acceptable');
-    expect(text).toContain('# Not Acceptable');
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(text).toContain('# Workshop.code Wiki Articles');
+    expect(text).toContain('/wiki/articles/how-to-use-loops');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('renders article markdown with PUBLIC_BASE_URL', async () => {
@@ -207,7 +213,7 @@ describe('render article integration', () => {
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe('https://workshop.codes/wiki/articles/how-to-use-loops.json');
   });
 
-  it('falls back to list when single article json returns 404 on negotiated route', async () => {
+  it('falls back to list when single article json returns 404 on an extensionless route', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
@@ -325,7 +331,7 @@ describe('render article integration', () => {
 
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toContain('text/markdown');
-    expect(text).toContain('url: https://worker.test/wiki/articles/hero-color-reference-table.md');
+    expect(text).toContain('url: https://worker.test/wiki/articles/hero-color-reference-table');
   });
 
   it('serves repeated article requests from the generated response cache', async () => {
@@ -375,6 +381,75 @@ describe('render article integration', () => {
     const secondText = await second.text();
     expect(secondText).toBe(firstText);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('shares generated cache entries between canonical and .md article aliases', async () => {
+    stubCaches(new FakeCache());
+    const { ctx, flush } = makeCtx();
+    const fetchMock = vi.fn(async () => new Response(
+      JSON.stringify({ title: 'How To Use Loops', content: '# Loop Guide' }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    ));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const env = {
+      UPSTREAM_BASE_URL: 'https://workshop.codes',
+      UPSTREAM_ARTICLES_PATH: '/wiki/articles.json',
+      RENDERER_VERSION: 'v1',
+      CACHE_TTL_SECONDS: '300',
+      PUBLIC_BASE_URL: 'https://md.example',
+    };
+
+    const first = await worker.fetch(
+      new Request('https://worker.test/wiki/articles/how-to-use-loops.md'),
+      env as never,
+      ctx as never,
+    );
+    expect(first.headers.get('x-cache-status')).toBe('MISS');
+    await first.text();
+    await flush();
+
+    const second = await worker.fetch(
+      new Request('https://worker.test/wiki/articles/how-to-use-loops'),
+      env as never,
+      ctx as never,
+    );
+    expect(second.headers.get('x-cache-status')).toBe('HIT');
+    await second.text();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('isolates generated cache entries when the request-origin fallback changes', async () => {
+    stubCaches(new FakeCache());
+    const { ctx, flush } = makeCtx();
+    const fetchMock = vi.fn(async () => new Response(
+      JSON.stringify({ title: 'How To Use Loops', content: '# Loop Guide' }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    ));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const env = {
+      UPSTREAM_BASE_URL: 'https://workshop.codes',
+      UPSTREAM_ARTICLES_PATH: '/wiki/articles.json',
+      RENDERER_VERSION: 'v1',
+      CACHE_TTL_SECONDS: '300',
+    };
+
+    const first = await worker.fetch(
+      new Request('https://first.example/wiki/articles/how-to-use-loops'),
+      env as never,
+      ctx as never,
+    );
+    expect(await first.text()).toContain('url: https://first.example/wiki/articles/how-to-use-loops');
+    await flush();
+
+    const second = await worker.fetch(
+      new Request('https://second.example/wiki/articles/how-to-use-loops'),
+      env as never,
+      ctx as never,
+    );
+    expect(second.headers.get('x-cache-status')).toBe('MISS');
+    expect(await second.text()).toContain('url: https://second.example/wiki/articles/how-to-use-loops');
   });
 
   it('serves the cached article index without re-fetching upstream', async () => {

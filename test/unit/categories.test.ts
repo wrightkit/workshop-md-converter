@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import worker from '../../src/index';
 import { resolveCategoryRoute } from '../../src/routes/categories';
+import { FakeCache, makeCtx, stubCaches } from '../helpers/fake-cache';
 
 const env = {
   UPSTREAM_BASE_URL: 'https://workshop.codes',
@@ -25,13 +26,13 @@ describe('category routes', () => {
       { title: 'Actions', slug: 'actions', description: 'Workshop actions.' },
     ]), { headers: { 'content-type': 'application/json' } })));
 
-    const response = await worker.fetch(new Request('https://worker.test/wiki/categories.md'), env as never);
+    const response = await worker.fetch(new Request('https://worker.test/wiki/categories'), env as never);
     const text = await response.text();
 
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('text/markdown');
     expect(text).toContain('# Workshop.code Wiki Categories');
-    expect(text.indexOf('/wiki/categories/actions.md')).toBeLessThan(text.indexOf('/wiki/categories/constants.md'));
+    expect(text.indexOf('/wiki/categories/actions')).toBeLessThan(text.indexOf('/wiki/categories/constants'));
   });
 
   it('renders a category as links to exact article Markdown routes', async () => {
@@ -44,12 +45,12 @@ describe('category routes', () => {
       },
     ]), { headers: { 'content-type': 'application/json' } })));
 
-    const response = await worker.fetch(new Request('https://worker.test/wiki/categories/actions.md'), env as never);
+    const response = await worker.fetch(new Request('https://worker.test/wiki/categories/actions'), env as never);
     const text = await response.text();
 
     expect(response.status).toBe(200);
     expect(text).toContain('title: "Workshop.code wiki category: Actions"');
-    expect(text).toContain('- [Abort](https://md.example/wiki/articles/abort.md)');
+    expect(text).toContain('- [Abort](https://md.example/wiki/articles/abort)');
     expect(text).not.toContain('content:');
   });
 
@@ -68,14 +69,41 @@ describe('category routes', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const response = await worker.fetch(new Request('https://worker.test/wiki/categories/actions.md'), env as never);
+    const response = await worker.fetch(new Request('https://worker.test/wiki/categories/actions'), env as never);
     const text = await response.text();
 
     expect(response.status).toBe(200);
     expect(text).toContain('count: 25');
-    expect(text).toContain('- [Action 25](https://md.example/wiki/articles/action-25.md)');
+    expect(text).toContain('- [Action 25](https://md.example/wiki/articles/action-25)');
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain('/wiki/categories/actions.json?page=1');
     expect(String(fetchMock.mock.calls[1]?.[0])).toContain('/wiki/categories/actions.json?page=2');
+  });
+
+  it('shares generated cache entries between canonical and .md category aliases', async () => {
+    stubCaches(new FakeCache());
+    const { ctx, flush } = makeCtx();
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([
+      { title: 'Abort', slug: 'abort', category: { title: 'Actions', slug: 'actions' } },
+    ]), { headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const first = await worker.fetch(
+      new Request('https://worker.test/wiki/categories/actions.md'),
+      env as never,
+      ctx as never,
+    );
+    expect(first.headers.get('x-cache-status')).toBe('MISS');
+    await first.text();
+    await flush();
+
+    const second = await worker.fetch(
+      new Request('https://worker.test/wiki/categories/actions'),
+      env as never,
+      ctx as never,
+    );
+    expect(second.headers.get('x-cache-status')).toBe('HIT');
+    await second.text();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

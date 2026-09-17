@@ -86,7 +86,7 @@ export function renderIndexMarkdown(articles: NormalizedArticle[]): { markdown: 
     source: 'workshop',
     content_type: 'wiki-article-index',
     count: articles.length,
-    generated_at: new Date().toISOString(),
+    generated_at: sourceRevisionTimestamp(articles),
   });
 
   const lines: string[] = [frontMatter, '', '# Workshop.code Wiki Articles', '', '## Articles', ''];
@@ -101,4 +101,16 @@ export function renderIndexMarkdown(articles: NormalizedArticle[]): { markdown: 
     markdown,
     tokens: estimateTokens(markdown),
   };
+}
+
+function sourceRevisionTimestamp(articles: NormalizedArticle[]): string {
+  const timestamps = articles
+    .flatMap((article) => [article.updatedAt, article.createdAt])
+    .filter((value): value is string => Boolean(value))
+    .map((value) => Date.parse(value))
+    .filter((value) => Number.isFinite(value));
+
+  return timestamps.length > 0
+    ? new Date(Math.max(...timestamps)).toISOString()
+    : '1970-01-01T00:00:00.000Z';
 }

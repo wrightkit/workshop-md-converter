@@ -6,7 +6,7 @@ const article: NormalizedArticle = {
   slug: 'hero-color-reference-table',
   title: 'Hero Color Reference Table',
   description: 'Workshop.code wiki article',
-  url: 'https://md.example/wiki/articles/hero-color-reference-table.md',
+  url: 'https://md.example/wiki/articles/hero-color-reference-table',
   sourceUrl: 'https://workshop.codes/wiki/articles/hero-color-reference-table',
   source: 'workshop',
   category: 'References',

@@ -47,7 +47,7 @@ export async function cacheStore(cacheUrl: string, response: Response, ttlSecond
   const cache = await openCache();
   if (!cache) return;
 
-  // The canonical key already encodes the negotiated variant, so drop
+  // The canonical key already encodes the response variant, so drop
   // `Vary` before storage: the Cache API matches on headers named in
   // `Vary`, and the lookup request is a synthetic key without an Accept
   // header. `Vary` is re-added when a cached response is served.

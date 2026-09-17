@@ -11,8 +11,8 @@ describe('normalizeLinks', () => {
 
     const out = normalizeLinks(md, 'https://md.example');
 
-    expect(out).toContain('[r](https://md.example/wiki/articles/destroy-effect.md)');
-    expect(out).toContain('[a](https://md.example/wiki/articles/abc.md?x=1#h)');
+    expect(out).toContain('[r](https://md.example/wiki/articles/destroy-effect)');
+    expect(out).toContain('[a](https://md.example/wiki/articles/abc?x=1#h)');
     expect(out).toContain('[keep](https://example.com/wiki/articles/abc)');
   });
 });

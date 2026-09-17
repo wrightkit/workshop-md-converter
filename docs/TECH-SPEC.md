@@ -7,11 +7,11 @@ Primary specification sources:
 
 This repository implements V1 scope:
 - `/manifest.json` (machine-readable document manifest)
-- `/wiki/articles.md`
-- `/wiki/articles/:slug.md`
-- `Accept: text/markdown` on slug path
+- `/wiki/articles`
+- `/wiki/articles/:slug`
+- `.md` suffixes as explicit Markdown aliases
 - minimal cleaning
-- proxy-domain `.md` link normalization (supports `PUBLIC_BASE_URL` with request-origin fallback)
+- proxy-domain article-link normalization (supports `PUBLIC_BASE_URL` with request-origin fallback)
 - markdown error pages
 - document revision metadata (`content_hash` in article front matter, content-derived ETag, `304` conditional requests)
 - machine-consumer contract (`docs/MACHINE-CONSUMER-CONTRACT.md`) with manifest/article integration tests
@@ -21,6 +21,6 @@ This repository implements V1 scope:
 ## Route Contract (Slug-Only)
 
 - Only slug article routes are supported:
-  - `GET /wiki/articles/:slug.md`
-  - `GET /wiki/articles/:slug` + `Accept: text/markdown`
+  - `GET /wiki/articles/:slug`
+  - `GET /wiki/articles/:slug.md` (explicit Markdown alias)
 - `Source` metadata is canonicalized to slug links (`/wiki/articles/:slug`).

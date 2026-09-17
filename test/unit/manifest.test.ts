@@ -7,7 +7,7 @@ function makeArticle(overrides: Partial<NormalizedArticle> = {}): NormalizedArti
   return {
     slug: 'slug',
     title: 'Title',
-    url: 'https://md.example/wiki/articles/slug.md',
+    url: 'https://md.example/wiki/articles/slug',
     sourceUrl: 'https://workshop.codes/wiki/articles/slug',
     source: 'workshop',
     tags: [],
@@ -57,12 +57,12 @@ describe('buildManifest', () => {
     const manifest = buildManifest([
       makeArticle({
         slug: 'loops',
-        url: 'https://md.example/wiki/articles/loops.md',
+        url: 'https://md.example/wiki/articles/loops',
         sourceUrl: 'https://workshop.codes/wiki/articles/loops',
       }),
     ]);
     const doc = manifest.documents[0];
-    expect(doc?.markdownUrl).toBe('https://md.example/wiki/articles/loops.md');
+    expect(doc?.markdownUrl).toBe('https://md.example/wiki/articles/loops');
     expect(doc?.sourceUrl).toBe('https://workshop.codes/wiki/articles/loops');
   });
 

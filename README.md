@@ -4,18 +4,18 @@ Cloudflare Worker that converts Workshop.code wiki JSON into stable, agent-frien
 
 ## Overview
 
-This service provides Markdown-first wiki access with predictable routes and content negotiation.
+This service provides Markdown-first wiki access with predictable routes.
 
 ## Available Endpoints
 
 - `GET /` (Markdown onboarding guide)
 - `GET /healthz`
 - `GET /manifest.json` (machine-readable document manifest)
-- `GET /wiki/categories.md`
-- `GET /wiki/categories/:slug.md`
-- `GET /wiki/articles.md`
-- `GET /wiki/articles/:slug.md`
-- `GET /wiki/articles/:slug` with `Accept: text/markdown`
+- `GET /wiki/categories`
+- `GET /wiki/categories/:slug`
+- `GET /wiki/articles`
+- `GET /wiki/articles/:slug`
+- `.md` suffixes remain supported as explicit Markdown aliases
 
 ## Quick Usage
 
@@ -27,21 +27,17 @@ curl https://md.wrightkit.dev/
 curl https://md.wrightkit.dev/manifest.json
 
 # Article index as markdown
-curl https://md.wrightkit.dev/wiki/articles.md
+curl https://md.wrightkit.dev/wiki/articles
 # Workshop documentation category index
-curl https://md.wrightkit.dev/wiki/categories/actions.md
+curl https://md.wrightkit.dev/wiki/categories/actions
 
-# Explicit markdown route
-curl https://md.wrightkit.dev/wiki/articles/hero-color-reference-table.md
-
-# Content negotiation route
-curl https://md.wrightkit.dev/wiki/articles/hero-color-reference-table \
-  -H 'Accept: text/markdown'
+# Exact document
+curl https://md.wrightkit.dev/wiki/articles/hero-color-reference-table
 ```
 
 ## Output Behavior
 
-- Responses are served as Markdown (`text/markdown; charset=utf-8`) on markdown routes and markdown-negotiated article routes.
+- Responses are served as Markdown (`text/markdown; charset=utf-8`) on article, index, and category routes.
 - Article routes first try `/wiki/articles/:slug.json`; only on 404 they fall back to `/wiki/articles.json`. Index rendering remains list-only.
 - Article output includes YAML front matter with core metadata, including a `content_hash` (SHA-256 of the rendered document) for provenance and change detection.
 - `GET /manifest.json` returns a compact, metadata-only document list (schema version, deterministic slug ordering, markdown/source URLs, conservative aliases). It never includes article bodies or content hashes; exact hashes come from the article route.
@@ -58,10 +54,11 @@ curl https://md.wrightkit.dev/wiki/articles/hero-color-reference-table \
 
 ## Caching
 
-- Generated Markdown (article index and article routes) is cached with the Workers Cache API. Cache keys include the route and renderer version, writes use `ctx.waitUntil()`, and hit/miss is observable via the `x-cache-status` response header (`HIT`/`MISS`). The manifest shares the same generated-content cache (JSON variant).
+- Generated Markdown (article index, article, and category routes) is cached with the named Workers Cache API. Its keys use canonical routes, renderer version, and the output/source URL scope, so `.md` aliases share inner generated-cache entries and different request-origin fallbacks cannot reuse incorrect content. Writes use `ctx.waitUntil()`, and generated-cache hit/miss is observable via `x-cache-status` (`HIT`/`MISS`).
 - Upstream Workshop.codes JSON subrequests are cached separately: success for `UPSTREAM_CACHE_TTL_SECONDS` (default 60s), 404 for 60s, and 5xx never. `x-upstream-cache` (`HIT`/`MISS`) reports upstream cache state at generation time.
-- 404 responses use a short TTL; 406 and 5xx responses are `no-store` and never cached.
-- The Cache API is PoP-local: entries live in the data center that served the request and are not a durable global store.
+- 404 responses use a short TTL; 5xx responses are `no-store` and never cached.
+- Worker Caching is enabled for the HTTP response layer as well. `Cf-Cache-Status` reports whether Cloudflare served the response without invoking the Worker; `x-cache-status` remains the inner generated-response cache status when the Worker runs.
+- The named Cache API is local to the originating data center and is not a durable store. Worker Caching is a separate Cloudflare cache layer with lower and upper tiers, so an upper-tier hit may serve requests from another data center without invoking the Worker.
 - Generation stays on demand and bounded: the article index and manifest are metadata-only; no bulk rendering or hashing of article bodies is performed. See `docs/ADR-002-caching-strategy.md` for the full strategy.
 
 ## Agent / Machine Consumers
@@ -80,11 +77,11 @@ Minimal flow:
 curl -s https://md.wrightkit.dev/manifest.json | jq '.documents[0]'
 
 # 2. Fetch an exact document using its markdownUrl
-curl -s https://md.wrightkit.dev/wiki/articles/hero-color-reference-table.md
+curl -s https://md.wrightkit.dev/wiki/articles/hero-color-reference-table
 
 # 3. Cache safely: the ETag is the content hash, so refetch conditionally
 curl -s -D - -o /dev/null -H 'If-None-Match: "<etag from step 2>"' \
-  https://md.wrightkit.dev/wiki/articles/hero-color-reference-table.md
+  https://md.wrightkit.dev/wiki/articles/hero-color-reference-table
 # → 304 Not Modified while the document is unchanged
 ```
 

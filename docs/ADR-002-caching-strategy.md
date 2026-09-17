@@ -30,49 +30,55 @@ Existing safeguards are preserved: the 6s timeout, a new cheap `Content-Length` 
 
 ### 2. Generated response caching
 
-Generated Markdown responses (article index and article routes) are stored in the same named cache under a synthetic key:
+Generated Markdown responses (article index, article, and category routes) are stored in the same named cache under a synthetic key:
 
 ```text
-https://cache.local/generated?key=<pathname>::markdown::<renderer-version>
+https://cache.local/generated?key=<canonical-pathname>::<variant>::<renderer-version>::<encoded-scope>
 ```
 
-- The canonical cache key is built by `buildCacheKey` and includes the renderer/schema revision, so a renderer bump changes keys without manual purging.
+- The canonical cache key is built by `buildCacheKey` and includes the canonical route, renderer/schema revision, and output/source URL scope. This makes `.md` aliases share entries while preventing request-origin fallback responses from crossing domains.
 - Writes use `ctx.waitUntil()` and never block the response path.
 - Hit/miss is observable via the `x-cache-status` response header (`HIT`/`MISS`) and the `cacheStatus` log field. Upstream cache state at generation time is exposed via `x-upstream-cache` (`HIT`/`MISS`).
-- `Vary` is stripped from stored copies (the variant is already part of the key; the Cache API matches on headers named in `Vary`, and lookup uses a synthetic key without an `Accept` header) and re-added when serving, preserving existing content-negotiation behavior.
-- The Cache API is PoP-local: entries exist only in the data center that served the request. It is a performance cache, not a durable global store; consumers must not treat it as the source of truth. Cached responses can be evicted at any time and are never required for correctness.
+- `Vary` is stripped from stored copies (the response variant is already part of the key; the Cache API matches on headers named in `Vary`, and lookup uses a synthetic key without an `Accept` header) and re-added when serving.
+- The named Cache API is local to the originating data center. It is a performance cache, not a durable global store; consumers must not treat it as the source of truth. Cached entries can be evicted at any time and are never required for correctness.
 
-### 3. Generation-cost boundary
+### 3. Worker response caching
+
+The Wrangler `cache.enabled` setting enables Cloudflare Worker Caching for cacheable HTTP responses. This separate layer runs before the Worker, uses Cloudflare's lower and upper cache tiers, and can collapse concurrent requests for the same URL. Its status is reported by Cloudflare's `Cf-Cache-Status` header; the application `x-cache-status` header continues to describe the inner generated-response cache when the Worker executes.
+
+The health endpoint is explicitly `no-store` so liveness checks continue to reach the Worker. Generated responses use their normal status-specific `Cache-Control` policy.
+
+### 4. Generation-cost boundary
 
 Generation stays on demand and bounded:
 
-- `/wiki/articles.md` derives from list metadata only; it never renders or hashes article bodies.
+- `/wiki/articles` derives from list metadata only; it never renders or hashes article bodies.
 - `GET /manifest.json` (#38) derives from the same list metadata only: it is a compact, deterministically ordered document list (schema version, slug, markdown/source URLs, conservative aliases) and never renders or hashes article bodies. Exact document content hashes are provided by the exact-document route below, not by the manifest.
 - Exact article routes expose a content-derived revision (`content_hash` in front matter and the `ETag`, both SHA-256 of the rendered document) and honor conditional requests (`If-None-Match` / `If-Modified-Since` → 304) per #39. Revision semantics are decoupled from Worker deployment versions: unchanged rendered content yields a stable hash even across `RENDERER_VERSION` changes.
 - No embeddings, vector indexing, background crawler, or full-Wiki materialization in this issue or its successors.
 
-### 4. Error/cache policy
+### 5. Error/cache policy
 
 | Response | Cache policy |
 | --- | --- |
 | 200 generated content | TTL = `CACHE_TTL_SECONDS` (default 300s). |
 | 404 (generated/upstream) | Short TTL (60s), stored in the Cache API and advertised via `Cache-Control`. |
-| 406 / 5xx (upstream/internal) | `Cache-Control: no-store`, never stored. |
+| 5xx (upstream/internal) | `Cache-Control: no-store`, never stored. |
 
 Transient backend failures are therefore never served as cached normal content.
 
-### 5. Resource-safety hardening
+### 6. Resource-safety hardening
 
 A `Content-Length` pre-check rejects responses larger than the 1 MB bound before the body is read, when the header is present and reliable. The existing hard post-read check is retained for every response.
 
 ## Storage boundary
 
-No KV, R2, D1, Queues, Cron, Workflows, or Durable Objects are introduced. Persistent storage should only be reconsidered if production/M4 evidence shows that PoP-local generated caching plus consumer-side local caching is insufficient.
+No KV, R2, D1, Queues, Cron, Workflows, or Durable Objects are introduced. Persistent storage should only be reconsidered if production/M4 evidence shows that the named Cache API plus Worker Caching and consumer-side local caching are insufficient.
 
 ## Consequences
 
 - Repeated requests within TTLs skip upstream fetch and re-render.
-- Cache entries are per-PoP and may be evicted at any time; correctness never depends on them.
-- A `RENDERER_VERSION` change naturally invalidates generated cache keys.
+- Named Cache API entries are local to the originating data center, while Worker Caching can serve from Cloudflare's upper tier; both may be evicted at any time and correctness never depends on them.
+- A `RENDERER_VERSION` change naturally invalidates generated cache keys. The article index preserves its `generated_at` front-matter field as a deterministic source-revision timestamp (latest article `updated_at`/`created_at`, or epoch when unavailable) and uses a SHA-256 ETag over the complete rendered metadata document, so equivalent payloads keep a stable validator while metadata changes with an unchanged article count still invalidate conditional requests.
 - Cache reads and writes are best-effort: a lookup failure degrades to a miss and a write failure is swallowed, so caching can never break serving.
 - `#38` should consume this policy rather than inventing its own; `#39` hashes only exact normalized/rendered documents; `#40` documents the final cache/revision contract.

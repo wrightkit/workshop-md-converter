@@ -43,7 +43,7 @@ function categoryTitle(raw: WorkshopCategoryRaw, slug: string): string {
 }
 
 function categoryUrl(base: string, slug: string): string {
-  return new URL(`/wiki/categories/${slug}.md`, base).toString();
+  return new URL(`/wiki/categories/${slug}`, base).toString();
 }
 
 function renderCategoryIndex(raw: unknown, publicBaseUrl: string): string {

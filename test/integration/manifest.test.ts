@@ -44,7 +44,7 @@ describe('manifest route integration', () => {
     expect(body.schemaVersion).toBe(1);
     expect(body.documents.length).toBeGreaterThan(0);
     for (const doc of body.documents) {
-      expect(doc.markdownUrl).toMatch(/\/wiki\/articles\/[^/]+\.md$/);
+      expect(doc.markdownUrl).toMatch(/\/wiki\/articles\/[^/]+$/);
       expect(doc.sourceUrl).toContain('workshop.codes');
     }
   });

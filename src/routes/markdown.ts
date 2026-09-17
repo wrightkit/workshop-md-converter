@@ -9,6 +9,7 @@ import { markdownResponse } from '../http/response';
 import type { Env } from '../env';
 import type { NormalizedArticle } from '../core/types';
 import type { FetchJsonResult } from '../source/fetch-json';
+import { sha256Hex } from '../utils/hash';
 
 type RouteKind =
   | { kind: 'index' }
@@ -59,7 +60,7 @@ export async function markdownRoute(request: Request, env: Env, ctx?: ExecutionC
     const raw = upstream.data;
     const list = normalizeWorkshopList(raw, publicBaseUrl, env.UPSTREAM_BASE_URL);
     const rendered = renderIndexMarkdown(list);
-    const etag = computeEtag([pathname, env.RENDERER_VERSION, String(list.length)]);
+    const etag = `"${await sha256Hex(rendered.markdown)}"`;
     const response = markdownResponse({
       markdown: rendered.markdown,
       tokens: rendered.tokens,
