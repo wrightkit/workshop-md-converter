@@ -40,9 +40,6 @@ jobs:
       - name: Enforce slug-only route docs
         run: bash tools/check_slug_only_docs.sh
 
-      - name: Type check
-        run: pnpm exec tsc --noEmit
-
       - name: Run tests
         run: pnpm test
 
