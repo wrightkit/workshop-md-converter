@@ -54,10 +54,11 @@ curl https://md.wrightkit.dev/wiki/articles/hero-color-reference-table
 
 ## Caching
 
-- Generated Markdown (article index and article routes) is cached with the Workers Cache API. Cache keys include the route and renderer version, writes use `ctx.waitUntil()`, and hit/miss is observable via the `x-cache-status` response header (`HIT`/`MISS`). The manifest shares the same generated-content cache (JSON variant).
+- Generated Markdown (article index, article, and category routes) is cached with the named Workers Cache API. Its keys use canonical routes, renderer version, and the output/source URL scope, so `.md` aliases share inner generated-cache entries and different request-origin fallbacks cannot reuse incorrect content. Writes use `ctx.waitUntil()`, and generated-cache hit/miss is observable via `x-cache-status` (`HIT`/`MISS`).
 - Upstream Workshop.codes JSON subrequests are cached separately: success for `UPSTREAM_CACHE_TTL_SECONDS` (default 60s), 404 for 60s, and 5xx never. `x-upstream-cache` (`HIT`/`MISS`) reports upstream cache state at generation time.
 - 404 responses use a short TTL; 5xx responses are `no-store` and never cached.
-- The Cache API is PoP-local: entries live in the data center that served the request and are not a durable global store.
+- Worker Caching is enabled for the HTTP response layer as well. `Cf-Cache-Status` reports whether Cloudflare served the response without invoking the Worker; `x-cache-status` remains the inner generated-response cache status when the Worker runs.
+- Both cache layers are PoP-local: entries live in the data center that served the request and are not a durable global store.
 - Generation stays on demand and bounded: the article index and manifest are metadata-only; no bulk rendering or hashing of article bodies is performed. See `docs/ADR-002-caching-strategy.md` for the full strategy.
 
 ## Agent / Machine Consumers

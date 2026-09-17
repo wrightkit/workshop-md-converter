@@ -79,6 +79,27 @@ describe('conditional requests', () => {
     expect(changedEtag).not.toBe(firstEtag);
   });
 
+  it('changes the article index etag when metadata changes at the same count', async () => {
+    let title = 'How To Use Loops';
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify([
+      { slug: 'how-to-use-loops', title },
+    ]), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    })));
+
+    const first = await worker.fetch(new Request('https://worker.test/wiki/articles'), env as never);
+    const firstEtag = first.headers.get('etag');
+    await first.text();
+
+    title = 'How To Use Loops v2';
+    const changed = await worker.fetch(new Request('https://worker.test/wiki/articles'), env as never);
+    const changedEtag = changed.headers.get('etag');
+    await changed.text();
+
+    expect(changedEtag).not.toBe(firstEtag);
+  });
+
   it('returns 304 with an empty body when If-None-Match matches the etag', async () => {
     stubArticleFetch(() => articleJson('# Loop Guide\n\nUse waits in loops.', UPDATED_AT));
 

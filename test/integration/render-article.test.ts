@@ -383,6 +383,75 @@ describe('render article integration', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('shares generated cache entries between canonical and .md article aliases', async () => {
+    stubCaches(new FakeCache());
+    const { ctx, flush } = makeCtx();
+    const fetchMock = vi.fn(async () => new Response(
+      JSON.stringify({ title: 'How To Use Loops', content: '# Loop Guide' }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    ));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const env = {
+      UPSTREAM_BASE_URL: 'https://workshop.codes',
+      UPSTREAM_ARTICLES_PATH: '/wiki/articles.json',
+      RENDERER_VERSION: 'v1',
+      CACHE_TTL_SECONDS: '300',
+      PUBLIC_BASE_URL: 'https://md.example',
+    };
+
+    const first = await worker.fetch(
+      new Request('https://worker.test/wiki/articles/how-to-use-loops.md'),
+      env as never,
+      ctx as never,
+    );
+    expect(first.headers.get('x-cache-status')).toBe('MISS');
+    await first.text();
+    await flush();
+
+    const second = await worker.fetch(
+      new Request('https://worker.test/wiki/articles/how-to-use-loops'),
+      env as never,
+      ctx as never,
+    );
+    expect(second.headers.get('x-cache-status')).toBe('HIT');
+    await second.text();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('isolates generated cache entries when the request-origin fallback changes', async () => {
+    stubCaches(new FakeCache());
+    const { ctx, flush } = makeCtx();
+    const fetchMock = vi.fn(async () => new Response(
+      JSON.stringify({ title: 'How To Use Loops', content: '# Loop Guide' }),
+      { status: 200, headers: { 'content-type': 'application/json' } },
+    ));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const env = {
+      UPSTREAM_BASE_URL: 'https://workshop.codes',
+      UPSTREAM_ARTICLES_PATH: '/wiki/articles.json',
+      RENDERER_VERSION: 'v1',
+      CACHE_TTL_SECONDS: '300',
+    };
+
+    const first = await worker.fetch(
+      new Request('https://first.example/wiki/articles/how-to-use-loops'),
+      env as never,
+      ctx as never,
+    );
+    expect(await first.text()).toContain('url: https://first.example/wiki/articles/how-to-use-loops');
+    await flush();
+
+    const second = await worker.fetch(
+      new Request('https://second.example/wiki/articles/how-to-use-loops'),
+      env as never,
+      ctx as never,
+    );
+    expect(second.headers.get('x-cache-status')).toBe('MISS');
+    expect(await second.text()).toContain('url: https://second.example/wiki/articles/how-to-use-loops');
+  });
+
   it('serves the cached article index without re-fetching upstream', async () => {
     stubCaches(new FakeCache());
     const { ctx, flush } = makeCtx();

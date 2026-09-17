@@ -36,6 +36,25 @@ describe('fetchJson upstream caching', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('coalesces concurrent misses for the same upstream URL', async () => {
+    stubCaches(new FakeCache());
+    const { ctx } = makeCtx();
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const results = await Promise.all([
+      fetchJson(ENV as never, '/wiki/articles.json', ctx as never),
+      fetchJson(ENV as never, '/wiki/articles.json', ctx as never),
+    ]);
+
+    expect(results[0]?.data).toEqual({ ok: true });
+    expect(results[1]?.data).toEqual({ ok: true });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('caches upstream 404s with a short TTL and serves them from cache', async () => {
     stubCaches(new FakeCache());
     const { ctx, flush } = makeCtx();

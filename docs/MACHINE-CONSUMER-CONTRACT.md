@@ -102,7 +102,7 @@ Successful (200) responses:
 
 - `Cache-Control: public, max-age=<ttl>, s-maxage=<ttl>` — `<ttl>` defaults to 300s (`CACHE_TTL_SECONDS`).
 - Markdown responses also set `Vary: Accept`.
-- Observability headers: `x-cache-status: HIT|MISS`, `x-cache-key: <pathname>::<variant>::<renderer-version>`, `x-upstream-cache: HIT|MISS`.
+- Observability headers: generated-cache `x-cache-status: HIT|MISS`, scoped `x-cache-key`, and `x-upstream-cache: HIT|MISS`. When Worker Caching serves a response before Worker execution, Cloudflare's `Cf-Cache-Status` header is the outer cache status.
 
 Conditional requests (articles and manifest):
 
@@ -111,7 +111,7 @@ Conditional requests (articles and manifest):
 
 Server-side caching model:
 
-- The Worker caches generated responses (articles, index, manifest) and upstream JSON in the Cloudflare Workers Cache API. Entries are PoP-local and may be evicted at any time; this is a performance cache, not a durable store. Consumers must treat HTTP headers (ETag, Cache-Control) as the cache contract and never rely on PoP state.
+- The Worker caches generated responses (articles, index, manifest, and categories) and upstream JSON in the Cloudflare Workers Cache API. Worker Caching is also enabled for cacheable HTTP responses. Both layers are PoP-local and may be evicted at any time; they are performance caches, not durable stores. Consumers must treat HTTP headers (ETag, Cache-Control) as the cache contract and never rely on PoP state.
 
 Status-specific cache policy:
 

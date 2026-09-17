@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import worker from '../../src/index';
 import { resolveCategoryRoute } from '../../src/routes/categories';
+import { FakeCache, makeCtx, stubCaches } from '../helpers/fake-cache';
 
 const env = {
   UPSTREAM_BASE_URL: 'https://workshop.codes',
@@ -77,5 +78,32 @@ describe('category routes', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain('/wiki/categories/actions.json?page=1');
     expect(String(fetchMock.mock.calls[1]?.[0])).toContain('/wiki/categories/actions.json?page=2');
+  });
+
+  it('shares generated cache entries between canonical and .md category aliases', async () => {
+    stubCaches(new FakeCache());
+    const { ctx, flush } = makeCtx();
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([
+      { title: 'Abort', slug: 'abort', category: { title: 'Actions', slug: 'actions' } },
+    ]), { headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const first = await worker.fetch(
+      new Request('https://worker.test/wiki/categories/actions.md'),
+      env as never,
+      ctx as never,
+    );
+    expect(first.headers.get('x-cache-status')).toBe('MISS');
+    await first.text();
+    await flush();
+
+    const second = await worker.fetch(
+      new Request('https://worker.test/wiki/categories/actions'),
+      env as never,
+      ctx as never,
+    );
+    expect(second.headers.get('x-cache-status')).toBe('HIT');
+    await second.text();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

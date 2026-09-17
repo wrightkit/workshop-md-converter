@@ -86,7 +86,6 @@ export function renderIndexMarkdown(articles: NormalizedArticle[]): { markdown: 
     source: 'workshop',
     content_type: 'wiki-article-index',
     count: articles.length,
-    generated_at: new Date().toISOString(),
   });
 
   const lines: string[] = [frontMatter, '', '# Workshop.code Wiki Articles', '', '## Articles', ''];

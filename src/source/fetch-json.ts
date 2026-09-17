@@ -16,6 +16,8 @@ export interface FetchJsonResult<T> {
   fromCache: boolean;
 }
 
+const inFlight = new Map<string, Promise<FetchJsonResult<unknown>>>();
+
 export async function fetchJson<T>(env: Env, path: string, ctx?: ExecutionContext): Promise<FetchJsonResult<T>> {
   const base = normalizeUpstreamUrl(env);
   const url = new URL(path, base);
@@ -43,6 +45,26 @@ export async function fetchJson<T>(env: Env, path: string, ctx?: ExecutionContex
       throw new HttpError(502, 'Failed to fetch upstream JSON');
     }
   }
+
+  const pending = inFlight.get(upstreamUrl);
+  if (pending) return (await pending) as FetchJsonResult<T>;
+
+  const request = fetchUncached<T>(env, url, upstreamUrl, cacheUrl, ctx);
+  inFlight.set(upstreamUrl, request as Promise<FetchJsonResult<unknown>>);
+  try {
+    return await request;
+  } finally {
+    inFlight.delete(upstreamUrl);
+  }
+}
+
+async function fetchUncached<T>(
+  env: Env,
+  url: URL,
+  upstreamUrl: string,
+  cacheUrl: string,
+  ctx?: ExecutionContext,
+): Promise<FetchJsonResult<T>> {
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
