@@ -87,7 +87,7 @@ curl -s -D - -o /dev/null -H 'If-None-Match: "<etag from step 2>"' \
 
 ## Maintainer Note
 
-For local development and runtime configuration, use the repository scripts and `wrangler.jsonc` as the source of truth. This README is intentionally user-focused and omits internal deployment and CI details.
+For local development and runtime configuration, use the repository scripts and `wrangler.jsonc` as the source of truth. GitHub Actions validates changes; production and branch-preview deployments are owned by Cloudflare Workers Builds through the repository's Git integration.
 
 ## License & Content Ownership
 
