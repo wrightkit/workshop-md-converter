@@ -79,6 +79,6 @@ No KV, R2, D1, Queues, Cron, Workflows, or Durable Objects are introduced. Persi
 
 - Repeated requests within TTLs skip upstream fetch and re-render.
 - Named Cache API entries are local to the originating data center, while Worker Caching can serve from Cloudflare's upper tier; both may be evicted at any time and correctness never depends on them.
-- A `RENDERER_VERSION` change naturally invalidates generated cache keys. The article index preserves its `generated_at` front-matter field and uses a SHA-256 ETag over the complete rendered metadata document, so metadata changes with an unchanged article count still invalidate conditional requests.
+- A `RENDERER_VERSION` change naturally invalidates generated cache keys. The article index preserves its `generated_at` front-matter field as a deterministic source-revision timestamp (latest article `updated_at`/`created_at`, or epoch when unavailable) and uses a SHA-256 ETag over the complete rendered metadata document, so equivalent payloads keep a stable validator while metadata changes with an unchanged article count still invalidate conditional requests.
 - Cache reads and writes are best-effort: a lookup failure degrades to a miss and a write failure is swallowed, so caching can never break serving.
 - `#38` should consume this policy rather than inventing its own; `#39` hashes only exact normalized/rendered documents; `#40` documents the final cache/revision contract.
