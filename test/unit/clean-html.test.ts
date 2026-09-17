@@ -18,8 +18,8 @@ describe('clean-html', () => {
     const input = '<strong>bold</strong> <a href="/wiki/articles/destroy-effect">relative</a> <a href="https://workshop.codes/wiki/articles/abc?x=1#h">absolute</a>';
     const out = cleanContent(input, 'https://md.example');
     expect(out).toContain('**bold**');
-    expect(out).toContain('[relative](https://md.example/wiki/articles/destroy-effect.md)');
-    expect(out).toContain('[absolute](https://md.example/wiki/articles/abc.md?x=1#h)');
+    expect(out).toContain('[relative](https://md.example/wiki/articles/destroy-effect)');
+    expect(out).toContain('[absolute](https://md.example/wiki/articles/abc?x=1#h)');
   });
 
   it('preserves table markup while removing unsafe tags', () => {

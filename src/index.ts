@@ -71,27 +71,9 @@ export default {
     const wantsMarkdown = negotiateMarkdown(request, url.pathname);
     const category = resolveCategoryRoute(url.pathname);
     const categoryMarkdown = category.kind !== 'none';
-    if (categoryMarkdown && !wantsMarkdown && !url.pathname.endsWith('.md')) {
-      return markdownErrorResponse(
-        406,
-        'Not Acceptable',
-        'This route requires a .md URL or Accept: text/markdown',
-        env,
-      );
-    }
-
     const route = resolveMarkdownRoute(url.pathname);
 
-    if (route.kind !== 'none' && !wantsMarkdown) {
-      return markdownErrorResponse(
-        406,
-        'Not Acceptable',
-        'This route requires a .md URL or Accept: text/markdown',
-        env,
-      );
-    }
-
-    if (route.kind === 'none' && !wantsMarkdown) {
+    if (route.kind === 'none' && !categoryMarkdown && !wantsMarkdown) {
       return fetch(request);
     }
 

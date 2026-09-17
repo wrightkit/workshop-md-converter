@@ -25,13 +25,13 @@ describe('category routes', () => {
       { title: 'Actions', slug: 'actions', description: 'Workshop actions.' },
     ]), { headers: { 'content-type': 'application/json' } })));
 
-    const response = await worker.fetch(new Request('https://worker.test/wiki/categories.md'), env as never);
+    const response = await worker.fetch(new Request('https://worker.test/wiki/categories'), env as never);
     const text = await response.text();
 
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('text/markdown');
     expect(text).toContain('# Workshop.code Wiki Categories');
-    expect(text.indexOf('/wiki/categories/actions.md')).toBeLessThan(text.indexOf('/wiki/categories/constants.md'));
+    expect(text.indexOf('/wiki/categories/actions')).toBeLessThan(text.indexOf('/wiki/categories/constants'));
   });
 
   it('renders a category as links to exact article Markdown routes', async () => {
@@ -44,12 +44,12 @@ describe('category routes', () => {
       },
     ]), { headers: { 'content-type': 'application/json' } })));
 
-    const response = await worker.fetch(new Request('https://worker.test/wiki/categories/actions.md'), env as never);
+    const response = await worker.fetch(new Request('https://worker.test/wiki/categories/actions'), env as never);
     const text = await response.text();
 
     expect(response.status).toBe(200);
     expect(text).toContain('title: "Workshop.code wiki category: Actions"');
-    expect(text).toContain('- [Abort](https://md.example/wiki/articles/abort.md)');
+    expect(text).toContain('- [Abort](https://md.example/wiki/articles/abort)');
     expect(text).not.toContain('content:');
   });
 
@@ -68,12 +68,12 @@ describe('category routes', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const response = await worker.fetch(new Request('https://worker.test/wiki/categories/actions.md'), env as never);
+    const response = await worker.fetch(new Request('https://worker.test/wiki/categories/actions'), env as never);
     const text = await response.text();
 
     expect(response.status).toBe(200);
     expect(text).toContain('count: 25');
-    expect(text).toContain('- [Action 25](https://md.example/wiki/articles/action-25.md)');
+    expect(text).toContain('- [Action 25](https://md.example/wiki/articles/action-25)');
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain('/wiki/categories/actions.json?page=1');
     expect(String(fetchMock.mock.calls[1]?.[0])).toContain('/wiki/categories/actions.json?page=2');

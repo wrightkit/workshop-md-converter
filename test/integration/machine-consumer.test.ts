@@ -58,7 +58,7 @@ describe('machine-consumer contract', () => {
     // 2. Select one entry by slug.
     const entry = manifest.documents.find((d) => d.slug === SLUG);
     expect(entry).toBeDefined();
-    expect(entry?.markdownUrl).toBe(`https://md.example/wiki/articles/${SLUG}.md`);
+    expect(entry?.markdownUrl).toBe(`https://md.example/wiki/articles/${SLUG}`);
     expect(entry?.sourceUrl).toBe(`https://workshop.codes/wiki/articles/${SLUG}`);
     expect(entry?.aliases).toEqual(['Hero Color Reference Table', SLUG]);
 
@@ -125,7 +125,7 @@ describe('machine-consumer contract', () => {
     expect(home.status).toBe(200);
     expect(await home.text()).toContain('# Workshop Markdown Converter');
 
-    const index = await worker.fetch(new Request('https://worker.test/wiki/articles.md'), ENV as never);
+    const index = await worker.fetch(new Request('https://worker.test/wiki/articles'), ENV as never);
     expect(index.status).toBe(200);
     expect(index.headers.get('content-type')).toContain('text/markdown');
     expect(await index.text()).toContain('# Workshop.code Wiki Articles');

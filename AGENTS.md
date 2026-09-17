@@ -29,9 +29,9 @@
 - Supported Markdown entry points are:
   - `GET /` for the onboarding Markdown page.
   - `GET /healthz` for the health response.
-  - `GET /wiki/articles.md` for the article index.
-  - `GET /wiki/articles/:slug.md` for an article.
-  - `GET /wiki/articles/:slug` with `Accept: text/markdown` for content negotiation.
+  - `GET /wiki/articles` for the article index.
+  - `GET /wiki/articles/:slug` for an article.
+  - `.md` suffixes remain supported as explicit Markdown aliases.
 - Article routes are slug-only. Keep route, test, and documentation examples in that form; do not introduce alternate article-reference semantics.
 - Existing `.json` requests bypass the Markdown renderer and remain upstream passthrough requests.
 
@@ -46,8 +46,8 @@
 
 ## Acceptance Checks
 
-- `curl /wiki/articles/hero-color-reference-table.md` returns Markdown with `text/markdown; charset=utf-8`.
-- `curl /wiki/articles/hero-color-reference-table -H 'Accept: text/markdown'` returns the same Markdown-oriented article response.
+- `curl /wiki/articles/hero-color-reference-table` returns Markdown with `text/markdown; charset=utf-8`.
+- `curl /wiki/articles/hero-color-reference-table.md` remains supported as an explicit Markdown alias.
 - Article output includes core metadata in front matter.
 - Cleaning removes `style` and `script` content without breaking code blocks, tables, headings, or lists.
 - An unknown article returns a Markdown-formatted 404 response.
@@ -56,7 +56,7 @@
 ## Task-to-Document Routing
 
 - First contact with the repository, route behavior, or V1 scope: read `README.md`, `docs/TECH-SPEC.md`, and the relevant tests.
-- Changes to route matching or `Accept` negotiation: read `src/index.ts`, `src/routes/markdown.ts`, `src/http/negotiate.ts`, and `test/unit/negotiate.test.ts` plus the article integration tests.
+- Changes to route matching or Markdown selection: read `src/index.ts`, `src/routes/markdown.ts`, `src/http/negotiate.ts`, and `test/unit/negotiate.test.ts` plus the article integration tests.
 - Changes to upstream fields, fallback fetching, or unknown-field preservation: read `src/source/fetch-json.ts`, `src/source/normalize.ts`, `src/source/workshop-adapter.ts`, and `test/unit/workshop-adapter.test.ts`.
 - Changes to body cleaning or link handling: read `src/transform/clean-html.ts`, `src/transform/normalize-links.ts`, the related unit tests, and `test/fixtures/article.expected.md`.
 - Changes to front matter, index output, or response metadata: read `src/transform/markdown-template.ts`, `src/http/response.ts`, `src/http/cache-key.ts`, and the integration tests.
@@ -92,5 +92,5 @@
 
 ## Scope Guardrails
 
-- V1 includes the index and article Markdown routes, content negotiation, minimal cleaning, front matter, cache headers, Markdown error pages, observability metadata, tests, and README behavior documentation.
+- V1 includes the index and article Markdown routes, optional `.md` aliases, minimal cleaning, front matter, cache headers, Markdown error pages, observability metadata, tests, and README behavior documentation.
 - V2+ work such as sectionizer upgrades, richer tokenization, webhook purge, or heterogeneous document fallback is out of scope unless explicitly requested.

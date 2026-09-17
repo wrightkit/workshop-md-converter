@@ -39,14 +39,14 @@ https://cache.local/generated?key=<pathname>::markdown::<renderer-version>
 - The canonical cache key is built by `buildCacheKey` and includes the renderer/schema revision, so a renderer bump changes keys without manual purging.
 - Writes use `ctx.waitUntil()` and never block the response path.
 - Hit/miss is observable via the `x-cache-status` response header (`HIT`/`MISS`) and the `cacheStatus` log field. Upstream cache state at generation time is exposed via `x-upstream-cache` (`HIT`/`MISS`).
-- `Vary` is stripped from stored copies (the variant is already part of the key; the Cache API matches on headers named in `Vary`, and lookup uses a synthetic key without an `Accept` header) and re-added when serving, preserving existing content-negotiation behavior.
+- `Vary` is stripped from stored copies (the response variant is already part of the key; the Cache API matches on headers named in `Vary`, and lookup uses a synthetic key without an `Accept` header) and re-added when serving.
 - The Cache API is PoP-local: entries exist only in the data center that served the request. It is a performance cache, not a durable global store; consumers must not treat it as the source of truth. Cached responses can be evicted at any time and are never required for correctness.
 
 ### 3. Generation-cost boundary
 
 Generation stays on demand and bounded:
 
-- `/wiki/articles.md` derives from list metadata only; it never renders or hashes article bodies.
+- `/wiki/articles` derives from list metadata only; it never renders or hashes article bodies.
 - `GET /manifest.json` (#38) derives from the same list metadata only: it is a compact, deterministically ordered document list (schema version, slug, markdown/source URLs, conservative aliases) and never renders or hashes article bodies. Exact document content hashes are provided by the exact-document route below, not by the manifest.
 - Exact article routes expose a content-derived revision (`content_hash` in front matter and the `ETag`, both SHA-256 of the rendered document) and honor conditional requests (`If-None-Match` / `If-Modified-Since` → 304) per #39. Revision semantics are decoupled from Worker deployment versions: unchanged rendered content yields a stable hash even across `RENDERER_VERSION` changes.
 - No embeddings, vector indexing, background crawler, or full-Wiki materialization in this issue or its successors.
@@ -57,7 +57,7 @@ Generation stays on demand and bounded:
 | --- | --- |
 | 200 generated content | TTL = `CACHE_TTL_SECONDS` (default 300s). |
 | 404 (generated/upstream) | Short TTL (60s), stored in the Cache API and advertised via `Cache-Control`. |
-| 406 / 5xx (upstream/internal) | `Cache-Control: no-store`, never stored. |
+| 5xx (upstream/internal) | `Cache-Control: no-store`, never stored. |
 
 Transient backend failures are therefore never served as cached normal content.
 

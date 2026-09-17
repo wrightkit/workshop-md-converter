@@ -19,7 +19,7 @@ describe('workshop-adapter slug-first behavior', () => {
       publicBaseUrl,
     );
 
-    expect(article.url).toBe('https://md.example/wiki/articles/hero-color-reference-table.md');
+    expect(article.url).toBe('https://md.example/wiki/articles/hero-color-reference-table');
     expect(article.sourceUrl).toBe('https://workshop.codes/wiki/articles/hero-color-reference-table');
   });
 

@@ -25,7 +25,7 @@ export function normalizeArticleRef(slug: string): string {
 }
 
 function toArticleUrl(base: string, slug: string): string {
-  return new URL(`/wiki/articles/${normalizeArticleRef(slug)}.md`, base).toString();
+  return new URL(`/wiki/articles/${normalizeArticleRef(slug)}`, base).toString();
 }
 
 function toSourceArticleUrl(base: string, slug: string): string {

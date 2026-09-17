@@ -1,6 +1,6 @@
 function ensureMarkdownPath(pathname: string): string {
   if (!pathname.startsWith('/wiki/articles/')) return pathname;
-  return pathname.endsWith('.md') ? pathname : `${pathname}.md`;
+  return pathname.replace(/\.md$/i, '');
 }
 
 function toProxyArticleUrl(target: URL, publicBaseUrl: string): string {

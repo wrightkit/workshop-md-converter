@@ -14,18 +14,18 @@ The backend is **model/harness-neutral**: it performs no search, ranking, embedd
 | Endpoint | Content type | Purpose |
 | --- | --- | --- |
 | `GET /manifest.json` | `application/json; charset=utf-8` | Compact document manifest (machine discovery) |
-| `GET /wiki/articles.md` | `text/markdown; charset=utf-8` | Article index (list metadata only) |
-| `GET /wiki/articles/:slug.md` | `text/markdown; charset=utf-8` | Exact document |
-| `GET /wiki/articles/:slug` with `Accept: text/markdown` | `text/markdown; charset=utf-8` | Exact document (negotiated) |
-| `GET /wiki/categories.md` | `text/markdown; charset=utf-8` | Category index |
-| `GET /wiki/categories/:slug.md` | `text/markdown; charset=utf-8` | Articles in one category |
+| `GET /wiki/articles` | `text/markdown; charset=utf-8` | Article index (list metadata only) |
+| `GET /wiki/articles/:slug` | `text/markdown; charset=utf-8` | Exact document |
+| `GET /wiki/articles/:slug.md` | `text/markdown; charset=utf-8` | Exact document (explicit Markdown alias) |
+| `GET /wiki/categories` | `text/markdown; charset=utf-8` | Category index |
+| `GET /wiki/categories/:slug` | `text/markdown; charset=utf-8` | Articles in one category |
 | `GET /` | `text/markdown; charset=utf-8` | Human onboarding guide |
 | `GET /healthz` | `text/plain; charset=utf-8` | Liveness |
 
 Notes:
 
-- Paths ending in `.md` are always served as Markdown regardless of `Accept`.
-- Index and article routes without `.md` require `Accept: text/markdown`; otherwise the server returns a Markdown `406 Not Acceptable` page.
+- Article, index, and category routes without `.md` are served as Markdown by default.
+- Paths ending in `.md` remain supported as explicit Markdown aliases.
 - Other `.json` paths (not `/manifest.json`) are passed through to the upstream origin untouched.
 - Category routes are metadata-only directories; category article entries link to the exact article Markdown routes.
 
@@ -41,7 +41,7 @@ Schema version: `schemaVersion: 1`. Breaking changes bump this value; additive f
       "title": "Hero Color Reference Table",
       "slug": "hero-color-reference-table",
       "category": "References",
-      "markdownUrl": "https://md.example/wiki/articles/hero-color-reference-table.md",
+      "markdownUrl": "https://md.example/wiki/articles/hero-color-reference-table",
       "sourceUrl": "https://workshop.codes/wiki/articles/hero-color-reference-table",
       "updatedAt": "2026-03-17T19:20:21.209Z",
       "aliases": ["Hero Color Reference Table", "hero-color-reference-table"]
@@ -51,7 +51,7 @@ Schema version: `schemaVersion: 1`. Breaking changes bump this value; additive f
 ```
 
 - `documents` is ordered deterministically by `slug` (ascending), so snapshots and diffs are reproducible.
-- `markdownUrl` is the exact-document Markdown route (`/wiki/articles/:slug.md`), absolute against `PUBLIC_BASE_URL` (or the request origin).
+- `markdownUrl` is the canonical exact-document Markdown route (`/wiki/articles/:slug`), absolute against `PUBLIC_BASE_URL` (or the request origin).
 - `sourceUrl` is the canonical upstream Workshop.codes page.
 - `aliases` are conservative: `[title, slug]` deduplicated. No invented OverPy/OSTW aliases are emitted.
 - Optional fields (`category`, `updatedAt`) are omitted when the upstream data does not provide them.
@@ -59,7 +59,7 @@ Schema version: `schemaVersion: 1`. Breaking changes bump this value; additive f
 
 ## 4. Document identity and slug rules
 
-- Document identity is the slug: `GET /wiki/articles/:slug.md`, or the negotiated `/wiki/articles/:slug`.
+- Document identity is the slug: `GET /wiki/articles/:slug`; the `.md` form is an explicit alias.
 - Slugs are slug-only; there are no numeric-identifier route semantics.
 - A trailing `.md` in the slug is normalized away.
 - The manifest `slug` is identical to the slug used in `markdownUrl` and in the article front matter.
@@ -119,21 +119,20 @@ Status-specific cache policy:
 | --- | --- |
 | 200 | Normal TTL (`CACHE_TTL_SECONDS`) |
 | 404 | Short TTL (60s) |
-| 406 / 5xx | `Cache-Control: no-store`, never cached |
+| 5xx | `Cache-Control: no-store`, never cached |
 
 ## 8. Error behavior
 
 | Condition | Status | Content type | Cache |
 | --- | --- | --- | --- |
 | Missing document | 404 | Markdown page (`# Article Not Found`) | Short TTL |
-| Markdown-capable route without `.md` and without `Accept: text/markdown` | 406 | Markdown page | no-store |
 | Upstream network/timeout failure (article/index) | 502 | Markdown page | no-store |
 | Upstream 5xx (article/index) | Upstream status preserved (e.g. 500) | Markdown page | no-store |
 | Upstream failure (manifest) | 502 | JSON `{ "error": { "status", "title", "message" } }` | no-store |
 
 ## 9. Compatibility and versioning
 
-- The route surface (`/manifest.json`, `/wiki/articles.md`, `/wiki/articles/:slug.md`, and the negotiated variants) is stable and slug-only.
+- The route surface (`/manifest.json`, `/wiki/articles`, `/wiki/articles/:slug`, and `.md` aliases) is stable and slug-only.
 - Manifest schema changes are versioned via `schemaVersion`; breaking changes bump it.
 - Front matter and manifest fields are additive: consumers must tolerate unknown keys. Removing or renaming an existing key is a breaking change.
 - `RENDERER_VERSION` may change rendered output (and therefore content hashes); the hash semantics in section 6 define how consumers detect that.

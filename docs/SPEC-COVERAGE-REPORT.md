@@ -9,13 +9,13 @@ Date: 2026-03-21
 
 ## Acceptance Criteria Mapping
 
-1. `curl /wiki/articles/hero-color-reference-table.md` returns markdown
+1. `curl /wiki/articles/hero-color-reference-table` returns markdown by default
 - Status: implemented
-- Evidence: route resolution in `src/routes/markdown.ts`, integration tests in `test/integration/render-article.test.ts`.
+- Evidence: route resolution in `src/routes/markdown.ts`, default-route integration tests in `test/integration/render-article.test.ts`.
 
-2. `curl /wiki/articles/hero-color-reference-table -H 'Accept: text/markdown'` returns markdown
+2. `.md` article aliases remain supported
 - Status: implemented
-- Evidence: `src/http/negotiate.ts`, integration test `falls back to request origin when PUBLIC_BASE_URL is missing`.
+- Evidence: optional `.md` route matching in `src/routes/markdown.ts`, integration tests in `test/integration/render-article.test.ts`.
 
 3. Front matter includes core metadata
 - Status: implemented
