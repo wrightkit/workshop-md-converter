@@ -90,7 +90,8 @@ describe('conditional requests', () => {
 
     const first = await worker.fetch(new Request('https://worker.test/wiki/articles'), env as never);
     const firstEtag = first.headers.get('etag');
-    await first.text();
+    const firstText = await first.text();
+    expect(firstText).toMatch(/^generated_at: /m);
 
     title = 'How To Use Loops v2';
     const changed = await worker.fetch(new Request('https://worker.test/wiki/articles'), env as never);

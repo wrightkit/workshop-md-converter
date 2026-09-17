@@ -111,7 +111,7 @@ Conditional requests (articles and manifest):
 
 Server-side caching model:
 
-- The Worker caches generated responses (articles, index, manifest, and categories) and upstream JSON in the Cloudflare Workers Cache API. Worker Caching is also enabled for cacheable HTTP responses. Both layers are PoP-local and may be evicted at any time; they are performance caches, not durable stores. Consumers must treat HTTP headers (ETag, Cache-Control) as the cache contract and never rely on PoP state.
+- The Worker caches generated responses (articles, index, manifest, and categories) and upstream JSON in the named Cloudflare Workers Cache API. Those entries are local to the originating data center and may be evicted at any time. Worker Caching is also enabled for cacheable HTTP responses and uses Cloudflare's lower and upper cache tiers, so it is not limited to one PoP. Neither layer is durable; consumers must treat HTTP headers (ETag, Cache-Control) as the cache contract and never rely on cache state.
 
 Status-specific cache policy:
 

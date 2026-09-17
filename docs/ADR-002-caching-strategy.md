@@ -40,11 +40,11 @@ https://cache.local/generated?key=<canonical-pathname>::<variant>::<renderer-ver
 - Writes use `ctx.waitUntil()` and never block the response path.
 - Hit/miss is observable via the `x-cache-status` response header (`HIT`/`MISS`) and the `cacheStatus` log field. Upstream cache state at generation time is exposed via `x-upstream-cache` (`HIT`/`MISS`).
 - `Vary` is stripped from stored copies (the response variant is already part of the key; the Cache API matches on headers named in `Vary`, and lookup uses a synthetic key without an `Accept` header) and re-added when serving.
-- The Cache API is PoP-local: entries exist only in the data center that served the request. It is a performance cache, not a durable global store; consumers must not treat it as the source of truth. Cached responses can be evicted at any time and are never required for correctness.
+- The named Cache API is local to the originating data center. It is a performance cache, not a durable global store; consumers must not treat it as the source of truth. Cached entries can be evicted at any time and are never required for correctness.
 
 ### 3. Worker response caching
 
-The Wrangler `cache.enabled` setting enables Cloudflare Worker Caching for cacheable HTTP responses. This layer runs before the Worker and can collapse concurrent requests for the same URL. Its status is reported by Cloudflare's `Cf-Cache-Status` header; the application `x-cache-status` header continues to describe the inner generated-response cache when the Worker executes.
+The Wrangler `cache.enabled` setting enables Cloudflare Worker Caching for cacheable HTTP responses. This separate layer runs before the Worker, uses Cloudflare's lower and upper cache tiers, and can collapse concurrent requests for the same URL. Its status is reported by Cloudflare's `Cf-Cache-Status` header; the application `x-cache-status` header continues to describe the inner generated-response cache when the Worker executes.
 
 The health endpoint is explicitly `no-store` so liveness checks continue to reach the Worker. Generated responses use their normal status-specific `Cache-Control` policy.
 
@@ -73,12 +73,12 @@ A `Content-Length` pre-check rejects responses larger than the 1 MB bound before
 
 ## Storage boundary
 
-No KV, R2, D1, Queues, Cron, Workflows, or Durable Objects are introduced. Persistent storage should only be reconsidered if production/M4 evidence shows that PoP-local generated caching plus consumer-side local caching is insufficient.
+No KV, R2, D1, Queues, Cron, Workflows, or Durable Objects are introduced. Persistent storage should only be reconsidered if production/M4 evidence shows that the named Cache API plus Worker Caching and consumer-side local caching are insufficient.
 
 ## Consequences
 
 - Repeated requests within TTLs skip upstream fetch and re-render.
-- Cache entries are per-PoP and may be evicted at any time; correctness never depends on them.
-- A `RENDERER_VERSION` change naturally invalidates generated cache keys. The article index is deterministic and uses a SHA-256 ETag over the rendered metadata document, so metadata changes with an unchanged article count still invalidate conditional requests.
+- Named Cache API entries are local to the originating data center, while Worker Caching can serve from Cloudflare's upper tier; both may be evicted at any time and correctness never depends on them.
+- A `RENDERER_VERSION` change naturally invalidates generated cache keys. The article index preserves its `generated_at` front-matter field and uses a SHA-256 ETag over the complete rendered metadata document, so metadata changes with an unchanged article count still invalidate conditional requests.
 - Cache reads and writes are best-effort: a lookup failure degrades to a miss and a write failure is swallowed, so caching can never break serving.
 - `#38` should consume this policy rather than inventing its own; `#39` hashes only exact normalized/rendered documents; `#40` documents the final cache/revision contract.

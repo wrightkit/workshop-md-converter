@@ -58,7 +58,7 @@ curl https://md.wrightkit.dev/wiki/articles/hero-color-reference-table
 - Upstream Workshop.codes JSON subrequests are cached separately: success for `UPSTREAM_CACHE_TTL_SECONDS` (default 60s), 404 for 60s, and 5xx never. `x-upstream-cache` (`HIT`/`MISS`) reports upstream cache state at generation time.
 - 404 responses use a short TTL; 5xx responses are `no-store` and never cached.
 - Worker Caching is enabled for the HTTP response layer as well. `Cf-Cache-Status` reports whether Cloudflare served the response without invoking the Worker; `x-cache-status` remains the inner generated-response cache status when the Worker runs.
-- Both cache layers are PoP-local: entries live in the data center that served the request and are not a durable global store.
+- The named Cache API is local to the originating data center and is not a durable store. Worker Caching is a separate Cloudflare cache layer with lower and upper tiers, so an upper-tier hit may serve requests from another data center without invoking the Worker.
 - Generation stays on demand and bounded: the article index and manifest are metadata-only; no bulk rendering or hashing of article bodies is performed. See `docs/ADR-002-caching-strategy.md` for the full strategy.
 
 ## Agent / Machine Consumers
