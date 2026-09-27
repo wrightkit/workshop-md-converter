@@ -19,8 +19,8 @@ importers:
         version: 2.9.0
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: ^5.20260914.1
-        version: 5.20260914.1
+        specifier: ^5.20260924.1
+        version: 5.20260924.1
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
@@ -29,7 +29,7 @@ importers:
         version: 4.1.11(vite@7.3.1(yaml@2.9.0))
       wrangler:
         specifier: ^4.131.2
-        version: 4.131.2(@cloudflare/workers-types@5.20260914.1)
+        version: 4.131.2(@cloudflare/workers-types@5.20260924.1)
 
 packages:
 
@@ -76,8 +76,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@cloudflare/workers-types@5.20260914.1':
-    resolution: {integrity: sha512-9xGgkvmG1lw0QdKJmSR5YNXaA221DfefpDCfPLz5PlzdYU0BXzxONQoWakLXTsFIz8xtsNfeUg+mbspIA5P4Xg==}
+  '@cloudflare/workers-types@5.20260924.1':
+    resolution: {integrity: sha512-puvr63PrfAFIkdh3FInGEgS0VTQ49WYNYDC2Eupd+qvwWwGpSRjxJD5Iz22oNHCmV1UEcsDz+OtGF++01vUloA==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -1288,7 +1288,7 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20260911.1':
     optional: true
 
-  '@cloudflare/workers-types@5.20260914.1': {}
+  '@cloudflare/workers-types@5.20260924.1': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -2152,7 +2152,7 @@ snapshots:
       '@cloudflare/workerd-linux-arm64': 1.20260911.1
       '@cloudflare/workerd-windows-64': 1.20260911.1
 
-  wrangler@4.131.2(@cloudflare/workers-types@5.20260914.1):
+  wrangler@4.131.2(@cloudflare/workers-types@5.20260924.1):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.5.0
       '@cloudflare/unenv-preset': 2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260911.1)
@@ -2163,7 +2163,7 @@ snapshots:
       unenv: 2.0.0-rc.24
       workerd: 1.20260911.1
     optionalDependencies:
-      '@cloudflare/workers-types': 5.20260914.1
+      '@cloudflare/workers-types': 5.20260924.1
       fsevents: 2.3.3
     transitivePeerDependencies:
       - '@types/node'
