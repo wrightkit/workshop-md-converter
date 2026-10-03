@@ -1,7 +1,8 @@
 import { HttpError } from '../core/errors';
 import { NOT_FOUND_CACHE_TTL_SECONDS } from '../core/config';
 import { fetchJson } from '../source/fetch-json';
-import { extractArticles, findArticleByRef, normalizeArticleRef, normalizeWorkshopSingleArticle } from '../source/workshop-adapter';
+import { fetchAllListPages } from '../source/paginated-list';
+import { findArticleByRef, normalizeArticleRef, normalizeWorkshopSingleArticle } from '../source/workshop-adapter';
 import { normalizeWorkshopList } from '../source/normalize';
 import { cleanContent } from '../transform/clean-html';
 import { renderArticleMarkdown, renderIndexMarkdown } from '../transform/markdown-template';
@@ -56,9 +57,8 @@ export async function markdownRoute(request: Request, env: Env, ctx?: ExecutionC
   const publicBaseUrl = resolvePublicBaseUrl(request, env);
 
   if (route.kind === 'index') {
-    const upstream = await fetchJson<Record<string, unknown>>(env, env.UPSTREAM_ARTICLES_PATH, ctx);
-    const raw = upstream.data;
-    const list = normalizeWorkshopList(raw, publicBaseUrl, env.UPSTREAM_BASE_URL);
+    const upstream = await fetchAllListPages(env, env.UPSTREAM_ARTICLES_PATH, ctx);
+    const list = normalizeWorkshopList(upstream.data, publicBaseUrl, env.UPSTREAM_BASE_URL);
     const rendered = renderIndexMarkdown(list);
     const etag = `"${await sha256Hex(rendered.markdown)}"`;
     const response = markdownResponse({
@@ -75,7 +75,7 @@ export async function markdownRoute(request: Request, env: Env, ctx?: ExecutionC
 
   const refSlug = normalizeArticleRef(route.ref);
   let article: NormalizedArticle | undefined;
-  let articleSource: FetchJsonResult<Record<string, unknown>>;
+  let articleSource: FetchJsonResult<unknown>;
   try {
     const single = await fetchJson<Record<string, unknown>>(env, `/wiki/articles/${refSlug}.json`, ctx);
     article = normalizeWorkshopSingleArticle(single.data, publicBaseUrl, env.UPSTREAM_BASE_URL);
@@ -85,10 +85,8 @@ export async function markdownRoute(request: Request, env: Env, ctx?: ExecutionC
       throw error;
     }
 
-    const upstream = await fetchJson<Record<string, unknown>>(env, env.UPSTREAM_ARTICLES_PATH, ctx);
-    const raw = upstream.data;
-    const articles = extractArticles(raw);
-    article = findArticleByRef(articles, refSlug, publicBaseUrl, env.UPSTREAM_BASE_URL);
+    const upstream = await fetchAllListPages(env, env.UPSTREAM_ARTICLES_PATH, ctx);
+    article = findArticleByRef(upstream.data, refSlug, publicBaseUrl, env.UPSTREAM_BASE_URL);
     articleSource = upstream;
   }
   if (!article) {

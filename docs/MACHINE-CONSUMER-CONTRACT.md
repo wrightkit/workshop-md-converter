@@ -50,6 +50,7 @@ Schema version: `schemaVersion: 1`. Breaking changes bump this value; additive f
 }
 ```
 
+- `documents` covers the complete upstream article list — not a single upstream page. The Worker fetches `GET /wiki/articles.json?page=N` sequentially (upstream page size 24), stops at the first short page, and fetches at most 100 pages per request. Entries are deduplicated by `slug`, so `slug` is unique. The same complete list backs `GET /wiki/articles` and the single-article list fallback (section 5).
 - `documents` is ordered deterministically by `slug` (ascending), so snapshots and diffs are reproducible.
 - `markdownUrl` is the canonical exact-document Markdown route (`/wiki/articles/:slug`), absolute against `PUBLIC_BASE_URL` (or the request origin).
 - `sourceUrl` is the canonical upstream Workshop.codes page.
@@ -66,7 +67,7 @@ Schema version: `schemaVersion: 1`. Breaking changes bump this value; additive f
 
 ## 5. Exact Markdown documents
 
-Article routes first request `/wiki/articles/:slug.json` from upstream; only on a 404 do they fall back to the full list (`/wiki/articles.json`) and match by slug. Missing documents produce a Markdown 404.
+Article routes first request `/wiki/articles/:slug.json` from upstream; only on a 404 do they fall back to the complete article list (all pages of `/wiki/articles.json`, fetched as described in section 3) and match by slug. Missing documents produce a Markdown 404.
 
 Article front matter (YAML):
 
