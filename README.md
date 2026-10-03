@@ -38,9 +38,9 @@ curl https://md.wrightkit.dev/wiki/articles/hero-color-reference-table
 ## Output Behavior
 
 - Responses are served as Markdown (`text/markdown; charset=utf-8`) on article, index, and category routes.
-- Article routes first try `/wiki/articles/:slug.json`; only on 404 they fall back to `/wiki/articles.json`. Index rendering remains list-only.
+- Article routes first try `/wiki/articles/:slug.json`; only on 404 they fall back to the complete `/wiki/articles.json` list (all upstream pages). Index rendering remains list-only.
 - Article output includes YAML front matter with core metadata, including a `content_hash` (SHA-256 of the rendered document) for provenance and change detection.
-- `GET /manifest.json` returns a compact, metadata-only document list (schema version, deterministic slug ordering, markdown/source URLs, conservative aliases). It never includes article bodies or content hashes; exact hashes come from the article route.
+- `GET /manifest.json` returns a compact, metadata-only document list covering the complete upstream article list (schema version, deterministic slug ordering, markdown/source URLs, conservative aliases). It never includes article bodies or content hashes; exact hashes come from the article route.
 - Body conversion uses minimal cleaning only.
 - Existing markdown structures (such as headings, code blocks, tables, and lists) are preserved.
 - `<style>` and `<script>` tags are removed.

@@ -16,7 +16,7 @@ const SLUG = 'hero-color-reference-table';
 function stubUpstream() {
   const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
-    if (url.endsWith('/wiki/articles.json')) {
+    if (url.includes('/wiki/articles.json')) {
       return new Response(JSON.stringify(fixture), {
         status: 200,
         headers: { 'content-type': 'application/json' },
