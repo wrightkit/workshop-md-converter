@@ -94,12 +94,47 @@ describe('render article integration', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('renders the article index across all upstream pages', async () => {
+    const firstPage = Array.from({ length: 24 }, (_, index) => ({
+      title: `Article ${index + 1}`,
+      slug: `article-${index + 1}`,
+    }));
+    const lastPage = [{ title: 'Late Entry', slug: 'late-entry' }];
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input));
+      const page = Number(url.searchParams.get('page') ?? '1');
+      return new Response(JSON.stringify(page === 1 ? firstPage : lastPage), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const env = {
+      UPSTREAM_BASE_URL: 'https://workshop.codes',
+      UPSTREAM_ARTICLES_PATH: '/wiki/articles.json',
+      RENDERER_VERSION: 'v1',
+      CACHE_TTL_SECONDS: '300',
+      PUBLIC_BASE_URL: 'https://md.example',
+    };
+
+    const res = await worker.fetch(new Request('https://worker.test/wiki/articles'), env as never);
+    const text = await res.text();
+
+    expect(res.status).toBe(200);
+    expect(text).toContain('count: 25');
+    expect(text).toContain('/wiki/articles/late-entry');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain('/wiki/articles.json?page=1');
+    expect(String(fetchMock.mock.calls[1]?.[0])).toContain('/wiki/articles.json?page=2');
+  });
+
   it('renders article markdown with PUBLIC_BASE_URL', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
         const url = String(input);
-        if (url.endsWith('/wiki/articles.json')) {
+        if (url.includes('/wiki/articles.json')) {
           return new Response(JSON.stringify(fixture), {
             status: 200,
             headers: { 'content-type': 'application/json' },
@@ -139,7 +174,7 @@ describe('render article integration', () => {
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
         const url = String(input);
-        if (url.endsWith('/wiki/articles.json')) {
+        if (url.includes('/wiki/articles.json')) {
           return new Response(JSON.stringify(fixture), {
             status: 200,
             headers: { 'content-type': 'application/json' },
@@ -221,7 +256,7 @@ describe('render article integration', () => {
         if (url.endsWith('/wiki/articles/how-to-use-loops.json')) {
           return new Response('not found', { status: 404 });
         }
-        if (url.endsWith('/wiki/articles.json')) {
+        if (url.includes('/wiki/articles.json')) {
           return new Response(
             JSON.stringify([
               {
@@ -262,13 +297,60 @@ describe('render article integration', () => {
     expect(text).toContain('# Loop Guide');
   });
 
+  it('falls back to later list pages when the article is not on the first upstream page', async () => {
+    const firstPage = Array.from({ length: 24 }, (_, index) => ({
+      title: `Article ${index + 1}`,
+      slug: `article-${index + 1}`,
+    }));
+    const lastPage = [
+      { slug: 'late-article', title: 'Late Article', content: '# Late\n\nFound on page two.' },
+    ];
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith('/wiki/articles/late-article.json')) {
+        return new Response('not found', { status: 404 });
+      }
+      if (url.pathname.endsWith('/wiki/articles.json')) {
+        const page = Number(url.searchParams.get('page') ?? '1');
+        return new Response(JSON.stringify(page === 1 ? firstPage : lastPage), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      return new Response('not found', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const req = new Request('https://worker.test/wiki/articles/late-article', {
+      headers: { accept: 'text/markdown' },
+    });
+
+    const env = {
+      UPSTREAM_BASE_URL: 'https://workshop.codes',
+      UPSTREAM_ARTICLES_PATH: '/wiki/articles.json',
+      RENDERER_VERSION: 'v1',
+      CACHE_TTL_SECONDS: '300',
+      PUBLIC_BASE_URL: 'https://md.example',
+    };
+
+    const res = await worker.fetch(req, env as never);
+    const text = await res.text();
+
+    expect(res.status).toBe(200);
+    expect(text).toContain('slug: late-article');
+    expect(text).toContain('# Late');
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(String(fetchMock.mock.calls[1]?.[0])).toContain('/wiki/articles.json?page=1');
+    expect(String(fetchMock.mock.calls[2]?.[0])).toContain('/wiki/articles.json?page=2');
+  });
+
   it('returns markdown 502 when single article upstream fetch fails and does not retry list', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.endsWith('/wiki/articles/how-to-use-loops.json')) {
         throw new Error('network down');
       }
-      if (url.endsWith('/wiki/articles.json')) {
+      if (url.includes('/wiki/articles.json')) {
         return new Response(JSON.stringify(fixture), {
           status: 200,
           headers: { 'content-type': 'application/json' },
@@ -305,7 +387,7 @@ describe('render article integration', () => {
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
         const url = String(input);
-        if (url.endsWith('/wiki/articles.json')) {
+        if (url.includes('/wiki/articles.json')) {
           return new Response(JSON.stringify(fixture), {
             status: 200,
             headers: { 'content-type': 'application/json' },
@@ -497,7 +579,7 @@ describe('render article integration', () => {
 
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.endsWith('/wiki/articles.json')) {
+      if (url.includes('/wiki/articles.json')) {
         return new Response(JSON.stringify(fixture), {
           status: 200,
           headers: { 'content-type': 'application/json' },

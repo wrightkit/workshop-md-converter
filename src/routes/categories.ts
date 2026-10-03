@@ -1,5 +1,6 @@
 import { HttpError } from '../core/errors';
 import { fetchJson } from '../source/fetch-json';
+import { fetchAllListPages } from '../source/paginated-list';
 import { extractArticles, normalizeWorkshopArticle } from '../source/workshop-adapter';
 import { markdownResponse } from '../http/response';
 import { toFrontMatter } from '../utils/yaml';
@@ -7,11 +8,7 @@ import { estimateTokens } from '../transform/tokens';
 import { sha256Hex } from '../utils/hash';
 import type { Env } from '../env';
 import type { WorkshopArticleRaw, WorkshopCategoryRaw } from '../core/types';
-import type { FetchJsonResult } from '../source/fetch-json';
 import { resolvePublicBaseUrl } from './markdown';
-
-const CATEGORY_PAGE_SIZE = 24;
-const MAX_CATEGORY_PAGES = 100;
 
 export type CategoryRouteKind =
   | { kind: 'index' }
@@ -109,7 +106,7 @@ export async function categoryRoute(request: Request, env: Env, ctx?: ExecutionC
   const publicBaseUrl = resolvePublicBaseUrl(request, env);
   const upstream = route.kind === 'index'
     ? await fetchJson<unknown>(env, '/wiki/categories.json', ctx)
-    : await fetchAllCategoryPages(env, route.slug, ctx);
+    : await fetchAllListPages(env, `/wiki/categories/${route.slug}.json`, ctx);
   const markdown = route.kind === 'index'
     ? renderCategoryIndex(upstream.data, publicBaseUrl)
     : renderCategory(upstream.data, route.slug, publicBaseUrl, env.UPSTREAM_BASE_URL);
@@ -118,26 +115,4 @@ export async function categoryRoute(request: Request, env: Env, ctx?: ExecutionC
   response.headers.set('x-upstream-bytes', String(upstream.bytesIn));
   response.headers.set('x-upstream-cache', upstream.fromCache ? 'HIT' : 'MISS');
   return response;
-}
-
-async function fetchAllCategoryPages(
-  env: Env,
-  slug: string,
-  ctx?: ExecutionContext,
-): Promise<FetchJsonResult<unknown>> {
-  const articles: WorkshopArticleRaw[] = [];
-  let lastPage: FetchJsonResult<unknown> | undefined;
-  let bytesIn = 0;
-
-  for (let page = 1; page <= MAX_CATEGORY_PAGES; page += 1) {
-    const current = await fetchJson<unknown>(env, `/wiki/categories/${slug}.json?page=${page}`, ctx);
-    lastPage = current;
-    bytesIn += current.bytesIn;
-    const pageArticles = Array.isArray(current.data) ? current.data as WorkshopArticleRaw[] : [];
-    articles.push(...pageArticles);
-    if (pageArticles.length < CATEGORY_PAGE_SIZE) break;
-  }
-
-  if (!lastPage) throw new HttpError(502, 'Failed to fetch category pages');
-  return { ...lastPage, data: articles, bytesIn };
 }

@@ -1,6 +1,6 @@
 import type { Env } from '../env';
 import { jsonResponse } from '../http/json-response';
-import { fetchJson } from '../source/fetch-json';
+import { fetchAllListPages } from '../source/paginated-list';
 import { normalizeWorkshopList } from '../source/normalize';
 import { buildManifest } from '../transform/manifest';
 import { sha256Hex } from '../utils/hash';
@@ -14,7 +14,7 @@ export function resolveManifestRoute(pathname: string): ManifestRouteKind {
 
 export async function manifestRoute(request: Request, env: Env, ctx?: ExecutionContext): Promise<Response> {
   const publicBaseUrl = resolvePublicBaseUrl(request, env);
-  const upstream = await fetchJson<Record<string, unknown>>(env, env.UPSTREAM_ARTICLES_PATH, ctx);
+  const upstream = await fetchAllListPages(env, env.UPSTREAM_ARTICLES_PATH, ctx);
   const list = normalizeWorkshopList(upstream.data, publicBaseUrl, env.UPSTREAM_BASE_URL);
   const manifest = buildManifest(list);
   const body = JSON.stringify(manifest, null, 2);

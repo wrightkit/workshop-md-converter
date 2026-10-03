@@ -14,7 +14,7 @@ const ENV = {
 function stubListFetch() {
   const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
-    if (url.endsWith('/wiki/articles.json')) {
+    if (url.includes('/wiki/articles.json')) {
       return new Response(JSON.stringify(fixture), {
         status: 200,
         headers: { 'content-type': 'application/json' },
@@ -28,6 +28,38 @@ function stubListFetch() {
 
 describe('manifest route integration', () => {
   afterEach(() => vi.unstubAllGlobals());
+
+  it('covers every upstream page, ordered by slug with no duplicates', async () => {
+    const pages = [
+      Array.from({ length: 24 }, (_, index) => ({ title: `B ${index + 1}`, slug: `b-${index + 1}` })),
+      Array.from({ length: 24 }, (_, index) => ({ title: `A ${index + 1}`, slug: `a-${index + 1}` })),
+      [{ title: 'Last', slug: 'last-page-entry' }],
+    ];
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input));
+      if (!url.pathname.endsWith('/wiki/articles.json')) {
+        return new Response('not found', { status: 404 });
+      }
+      const page = Number(url.searchParams.get('page') ?? '1');
+      return new Response(JSON.stringify(pages[page - 1] ?? []), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const res = await worker.fetch(new Request('https://worker.test/manifest.json'), ENV as never);
+    const body = JSON.parse(await res.text()) as { documents: Array<{ slug: string }> };
+    const slugs = body.documents.map((doc) => doc.slug);
+
+    expect(res.status).toBe(200);
+    expect(slugs).toHaveLength(49);
+    expect(slugs).toContain('last-page-entry');
+    expect(new Set(slugs).size).toBe(slugs.length);
+    expect(slugs).toEqual([...slugs].sort((a, b) => a.localeCompare(b)));
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(res.headers.get('x-upstream-url')).toBe('https://workshop.codes/wiki/articles.json');
+  });
 
   it('serves a generated manifest from the article list fixture', async () => {
     stubListFetch();
