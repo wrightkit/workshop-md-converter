@@ -51,6 +51,7 @@ Schema version: `schemaVersion: 1`. Breaking changes bump this value; additive f
 ```
 
 - `documents` covers the complete upstream article list — not a single upstream page. The Worker fetches `GET /wiki/articles.json?page=N` sequentially (upstream page size 24), stops at the first short page, and fetches at most 100 pages per request. Entries are deduplicated by `slug`, so `slug` is unique. The same complete list backs `GET /wiki/articles` and the single-article list fallback (section 5).
+- The document universe is the `articles.json` list endpoint itself. Upstream category listings can contain entries absent from that endpoint; such entries are not listed in the manifest or index, though their article routes still resolve when the upstream single-article endpoint serves them.
 - `documents` is ordered deterministically by `slug` (ascending), so snapshots and diffs are reproducible.
 - `markdownUrl` is the canonical exact-document Markdown route (`/wiki/articles/:slug`), absolute against `PUBLIC_BASE_URL` (or the request origin).
 - `sourceUrl` is the canonical upstream Workshop.codes page.
