@@ -66,13 +66,7 @@
 
 ## General Workflow
 
-1. Confirm the user goal, repository boundary, current branch, worktree, and clean or dirty state.
-2. Read the smallest relevant documents, source files, and tests before deciding on an implementation.
-3. Trace the affected behavior from upstream producer through adapter, renderer, and persisted or returned state. Do not infer business correctness from an HTTP status alone.
-4. Make the narrowest change that satisfies the request. Avoid speculative refactors, new compatibility layers, or unrelated documentation changes.
-5. Preserve the existing route and data contracts, especially minimal cleaning, Markdown structure, unknown fields in `extra`, and slug-only routes.
-6. Run validation matched to the change, then review the complete diff and repository status.
-7. Report what passed, what was not run, remaining risks, and any decision that still belongs to the user.
+Before judging a change correct, trace the affected behavior end to end: upstream fetch, adapter, renderer, and the returned response. An HTTP status alone does not show that the content is right.
 
 ## Validation and Delivery
 
