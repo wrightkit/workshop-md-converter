@@ -1,7 +1,8 @@
 # Human review is required for what defines "passing" and for what publishes:
-# release workflows, public contracts, upstream pins, and agent instructions.
-# Rules stay narrow so review is rare. Ordinary code, tests, docs, and CI edits
+# CI and release workflows, public contracts, upstream pins, and agent instructions.
+# Rules stay narrow so review is rare. Ordinary code, tests, and docs
 # stay unowned, so agents may review and merge them.
 /.github/CODEOWNERS @Teakowa
+/.github/workflows/ @Teakowa
 /AGENTS.md @Teakowa
 /wrangler.jsonc @Teakowa
