@@ -72,7 +72,7 @@ Before judging a change correct, trace the affected behavior end to end: upstrea
 
 - `pnpm test` runs the repository test suite.
 - `pnpm build` runs the Wrangler dry-run build and is required for runtime or deployment-related changes.
-- `pnpm exec tsc --noEmit` is useful for TypeScript-only changes when a focused type check is sufficient.
+- `pnpm typecheck` runs the strict no-emit TypeScript check and is required for every TypeScript change; CI runs the same command.
 - `bash tools/check_slug_only_docs.sh` is required after changing `README.md`, `AGENTS.md`, or route documentation.
 - GitHub Actions is validation-only. Do not add Cloudflare credentials or Worker deployment steps to repository workflows; production and branch-preview deployment belong to Cloudflare Workers Builds.
 - Before committing, run `git diff --check`, inspect the staged diff, and stage only files owned by the task.
