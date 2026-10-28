@@ -1,6 +1,6 @@
 # workshop-md-converter
 
-Cloudflare Worker that converts Workshop.code wiki JSON into stable, agent-friendly Markdown for API consumers.
+Cloudflare Worker that converts Workshop.codes wiki JSON into stable, agent-friendly Markdown for API consumers.
 
 ## Overview
 
@@ -16,6 +16,7 @@ This service provides Markdown-first wiki access with predictable routes.
 - `GET /wiki/articles`
 - `GET /wiki/articles/:slug`
 - `.md` suffixes remain supported as explicit Markdown aliases
+- `Accept: text/markdown` also selects Markdown; other `*.json` paths pass through unchanged
 
 ## Quick Usage
 
@@ -54,7 +55,7 @@ curl https://md.wrightkit.dev/wiki/articles/hero-color-reference-table
 
 ## Caching
 
-- Generated Markdown (article index, article, and category routes) is cached with the named Workers Cache API. Its keys use canonical routes, renderer version, and the output/source URL scope, so `.md` aliases share inner generated-cache entries and different request-origin fallbacks cannot reuse incorrect content. Writes use `ctx.waitUntil()`, and generated-cache hit/miss is observable via `x-cache-status` (`HIT`/`MISS`).
+- Generated Markdown (article index, article, and category routes) is cached with the named Workers Cache API. Its keys use canonical routes, renderer version, and the output/source URL scope, so `.md` aliases share inner generated-cache entries and different request-origin fallbacks cannot reuse incorrect content. Entries live for `CACHE_TTL_SECONDS` (default 300s). Writes use `ctx.waitUntil()`, and generated-cache hit/miss is observable via `x-cache-status` (`HIT`/`MISS`).
 - Upstream Workshop.codes JSON subrequests are cached separately: success for `UPSTREAM_CACHE_TTL_SECONDS` (default 60s), 404 for 60s, and 5xx never. `x-upstream-cache` (`HIT`/`MISS`) reports upstream cache state at generation time.
 - 404 responses use a short TTL; 5xx responses are `no-store` and never cached.
 - Worker Caching is enabled for the HTTP response layer as well. `Cf-Cache-Status` reports whether Cloudflare served the response without invoking the Worker; `x-cache-status` remains the inner generated-response cache status when the Worker runs.
