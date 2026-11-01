@@ -9,9 +9,11 @@ on:
 permissions:
   contents: read
 
+# A newer push to the same pull request supersedes the older run. Pushes to
+# main never share a group, so each main commit keeps a complete run.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   ci:
