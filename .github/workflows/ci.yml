@@ -31,20 +31,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Enforce slug-only route docs
-        run: bash tools/check_slug_only_docs.sh
-
       - name: Type check
         run: pnpm typecheck
 
-      - name: Run tests
-        run: pnpm test
-
-      - name: Build check
+      - name: Build
         run: pnpm run build

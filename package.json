@@ -1,26 +1,41 @@
 {
   "name": "workshop-md-converter",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "build": "wrangler deploy --dry-run",
+    "dev": "pnpm convert && astro dev",
+    "build": "pnpm convert && astro build",
+    "preview": "astro preview",
+    "typecheck": "pnpm convert && astro check",
+    "lint:docs": "nimbus-docs lint",
+    "lint:docs:fix": "nimbus-docs lint --fix",
+    "prepreview:cf": "astro build",
+    "preview:cf": "wrangler dev",
+    "predeploy": "pnpm typecheck && pnpm build",
     "deploy": "wrangler deploy",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "crawl": "node tools/crawl.mjs",
+    "convert": "node tools/convert.ts"
   },
   "dependencies": {
-    "he": "^2.0.0",
-    "linkedom": "^0.18.13",
-    "yaml": "^2.9.1"
+    "@cloudflare/nimbus-docs": "^0.19.2",
+    "@fontsource-variable/inter": "^5.2.8",
+    "@fontsource-variable/jetbrains-mono": "^5.2.8",
+    "@iconify-json/ph": "^1.2.0",
+    "@resvg/resvg-js": "^2.6.2",
+    "astro": "7.3.3",
+    "clsx": "^2.1.1",
+    "satori": "^0.26.0",
+    "sharp": "^0.35.4",
+    "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20261014.1",
-    "@types/he": "^1.2.3",
-    "typescript": "^7.0.2",
-    "vitest": "^5.0.4",
-    "wrangler": "^4.151.1"
+    "@astrojs/check": "^0.9.8",
+    "@astrojs/language-server": "2.16.13",
+    "@tailwindcss/vite": "^4.1.4",
+    "pagefind": "^1.5.2",
+    "tailwindcss": "^4.1.4",
+    "typescript": "^5.8.3",
+    "wrangler": "^4.95.0"
   }
 }
