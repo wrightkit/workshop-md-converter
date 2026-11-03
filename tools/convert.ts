@@ -30,7 +30,7 @@ const categories = new Map(articles.map((a) => [a.category.slug, a.category]));
 const href = (a: Article) => `/${a.category.slug}/${a.slug}/`;
 
 function resolve(target: string): string | null {
-  const [path, hash = ''] = target.split('#');
+  const [path, hash = ''] = target.replaceAll('%2B', '+').split('#');
   const category = path.match(/^\/wiki\/categories\/([^/]+)$/)?.[1];
   if (category) return categories.has(category) ? `/${category}/` : null;
   const key = decodeURIComponent(path.replace(/^\/wiki\/articles\//, '').replaceAll('+', ' ')).toLowerCase();
@@ -43,9 +43,13 @@ function convert(content: string): string {
     .replaceAll('\r\n', '\n')
     .replaceAll('\f', '')
     .replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, '')
-    .replace(/\[([^\]]*)\]\((\/wiki\/[^)\s]*)\)/g, (_, text: string, target: string) => {
-      const next = resolve(target.replaceAll('%2B', '+'));
+    .replace(/\[([^\]]*)\]\(((?:https?:\/\/workshop\.codes)?\/wiki\/[^)\s]*)\)/g, (_, text: string, target: string) => {
+      const next = resolve(target);
       return next ? `[${text}](${next})` : text;
+    })
+    .replace(/href="(?:https?:\/\/workshop\.codes)?(\/wiki\/[^"]*)"/g, (all, target: string) => {
+      const next = resolve(target);
+      return next ? `href="${next}"` : all;
     });
 }
 
