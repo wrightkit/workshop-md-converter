@@ -1,0 +1,45 @@
+---
+title: "Explosion Sound"
+---
+
+## Options
+- **Ana Biotic Grenade Explosion Sound**
+- **Ashe Dynamite Explosion Sound**
+- **Baptiste Biotic Launcher Explosion Sound**
+- **Bastion Tank Cannon Explosion Sound**
+- **Brigitte Repair Pack Impact Sound**
+- **Brigitte Repair Pack Armor Sound**
+- **Brigitte Whip Shot Heal Area Sound**
+- **DVa Micro Missiles Explosion Sound**
+- **DVa Self Destruct Explosion Sound**
+- **Doomfist Rising Uppercut Leap Sound**
+- **Doomfist Rising Uppercut Impact Sound**
+- **Doomfist Meteor Strike Impact Sound**
+- **Echo Sticky Bomb Explosion Sound**
+- **Junkrat Frag Launcher Explosion Sound**
+- **Junkrat Concussion Mine Explosion Sound**
+- **Junkrat RIP Tire Explosion Sound**
+- **Hanzo Sonic Arrow Initial Pulse Sound**
+- **Lúcio Sound Barrier Cast Sound**
+- **Cassidy Flashbang Explosion Sound**
+- **Moira Fade Disappear Sound**
+- **Moira Fade Reappear Sound**
+- **Orisa Halt Implosion Sound**
+- **Pharah Rocket Launcher Explosion Sound**
+- **Pharah Concussive Blast Sound**
+- **Pharah Barrage Explosion Sound**
+- **Reinhardt Fire Strike Target Impact Sound**
+- **Sigma Hypersphere Implosion Sound**
+- **Sigma Accretion Impact Sound**
+- **Sombra Logo Sound**
+- **Sombra Translocator Disappear Sound**
+- **Sombra Translocator Reappear Sound**
+- **Sombra EMP Explosion Sound**
+- **Symmetra Teleporter Reappear Sound**
+- **Tracer Recall Disappear Sound**
+- **Tracer Recall Reappear Sound**
+- **Widowmaker Venom Mine Explosion Sound**
+- **Winston Jump Pack Landing Sound**
+- **Wrecking Ball Piledriver Impact Sound**
+- **Wrecking Ball Minefield Explosion Sound**
+- **Zarya Particle Cannon Explosion Sound**

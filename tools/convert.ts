@@ -21,7 +21,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const docsDir = join(root, 'src/content/docs');
 const publicDir = join(root, 'public');
 const ORIGIN = 'https://md.wrightkit.dev';
-const articles: Article[] = JSON.parse(await readFile(join(root, 'data/wiki.json'), 'utf8'));
+const articles: Article[] = JSON.parse(await readFile(join(root, 'out/wiki.json'), 'utf8'));
 
 const bySlug = new Map(articles.map((a) => [a.slug, a]));
 const byTitle = new Map(articles.map((a) => [a.title.toLowerCase(), a]));
@@ -59,10 +59,48 @@ const frontmatter = (fields: Record<string, string | null>) =>
     .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
     .join('\n')}\n---\n\n`;
 
-for (const a of articles) {
-  const file = join(docsDir, a.category.slug, `${a.slug}.md`);
+// Drops trailing whitespace. A Markdown hard break (two trailing spaces) becomes a backslash break.
+function tidy(text: string): string {
+  let fenced = false;
+  const lines = text.split('\n').map((line) => line.replace(/^ +\t/, '\t'));
+  return lines
+    .map((line, i) => {
+      const trimmed = line.trimEnd();
+      if (/^\s*```/.test(trimmed)) fenced = !fenced;
+      const hardBreak = !fenced && / {2,}$/.test(line) && !/^\s*[<|]/.test(trimmed) && lines[i + 1]?.trim();
+      return hardBreak ? `${trimmed}\\` : trimmed;
+    })
+    .join('\n');
+}
+
+// Articles over the repository size limit are split into one page per part, under <slug>/.
+const SPLIT: Record<string, RegExp> = {
+  'health-packs-locations': /^(?=# )/m,
+  'comparisons-and-truth': /^(?=<details>)/m,
+};
+const slugify = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+async function writePage(file: string, fields: Record<string, string | null>, body: string) {
   await mkdir(dirname(file), { recursive: true });
-  await writeFile(file, frontmatter({ title: a.title, description: a.subtitle }) + convert(a.content).trim() + '\n');
+  await writeFile(file, frontmatter(fields) + tidy(body.trim()) + '\n');
+}
+
+for (const a of articles) {
+  const dir = join(docsDir, a.category.slug);
+  const body = convert(a.content);
+  const split = SPLIT[a.slug];
+  if (!split) {
+    await writePage(join(dir, `${a.slug}.md`), { title: a.title, description: a.subtitle }, body);
+    continue;
+  }
+  const [intro, ...parts] = body.split(split);
+  const pages = parts.map((part) => {
+    const title = part.match(/^# (.+)$/m)?.[1] ?? part.match(/<summary>(.*?)<\/summary>/)?.[1] ?? '';
+    return { title, slug: slugify(title), body: part.replace(/^# .*\n/, '') };
+  });
+  for (const page of pages) await writePage(join(dir, a.slug, `${page.slug}.md`), { title: page.title }, page.body);
+  const links = pages.map((page) => `- [${page.title}](${href(a)}${page.slug}/)`).join('\n');
+  await writePage(join(dir, a.slug, 'index.md'), { title: a.title, description: a.subtitle }, `${intro}\n\n${links}`);
 }
 
 for (const c of categories.values()) {

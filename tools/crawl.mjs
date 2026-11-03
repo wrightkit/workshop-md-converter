@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 const ORIGIN = 'https://workshop.codes';
 const { CF_CLEARANCE, USER_AGENT } = process.env;
 if (!CF_CLEARANCE || !USER_AGENT) throw new Error('Set CF_CLEARANCE and USER_AGENT.');
-const OUT = new URL('../data/', import.meta.url).pathname;
+const OUT = new URL('../out/', import.meta.url).pathname;
 const PAGE_SIZE = 24;
 const MAX_PAGES = 100;
 const DELAY_MS = 300;

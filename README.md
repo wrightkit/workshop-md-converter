@@ -9,8 +9,8 @@ Source of `md.wrightkit.dev`: the Workshop.codes wiki as Markdown, built with [N
 
 ```bash
 pnpm install
-pnpm dev        # local dev server (runs pnpm convert first)
-pnpm build      # convert, then static build into dist/
+pnpm dev        # local dev server
+pnpm build      # static build into dist/
 pnpm typecheck
 ```
 
@@ -21,4 +21,4 @@ CF_CLEARANCE=... USER_AGENT=... pnpm crawl
 pnpm convert
 ```
 
-Commit the generated files. Cloudflare Workers Builds deploys `main`.
+Commit the changed Markdown. Cloudflare Workers Builds deploys `main`.

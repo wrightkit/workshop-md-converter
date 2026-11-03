@@ -1,0 +1,23 @@
+---
+title: "Is Meleeing"
+description: "Player"
+---
+
+## Description
+
+<big>Whether the specified player is meleeing.</big>
+
+## Snippet
+
+```
+Is Meleeing(Event Player);
+```
+
+## Properties
+
+**Returns**: _<span style="color: #c678dd">Boolean</span>_
+**Parameters**: ==_Player_==
+
+> ==**Player**==
+> _Type: **[Player](/constants/player/)**, Default: **[Event Player](/values/event-player/)**_
+> The player whose melee usage to check.

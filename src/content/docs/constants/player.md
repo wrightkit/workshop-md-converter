@@ -1,0 +1,52 @@
+---
+title: "Player"
+---
+
+Used as an event argument to determine who will be checked by the event based on slot number or hero.
+
+## Options
+- **All**
+- **Slot 0**
+- **Slot 1**
+- **Slot 2**
+- **Slot 3**
+- **Slot 4**
+- **Slot 5**
+- **Slot 6**
+- **Slot 7**
+- **Slot 8**
+- **Slot 9**
+- **Slot 10**
+- **Slot 11**
+- **Ana**
+- **Ashe**
+- **Baptiste**
+- **Bastion**
+- **Brigitte**
+- **D.va**
+- **Doomfist**
+- **Echo**
+- **Genji**
+- **Hanzo**
+- **Junkrat**
+- **Lucio**
+- **Mccree**
+- **Mei**
+- **Mercy**
+- **Moira**
+- **Orisa**
+- **Pharah**
+- **Reaper**
+- **Reinhardt**
+- **Roadhog**
+- **Sigma**
+- **Soldier 76**
+- **Sombra**
+- **Symmetra**
+- **Torbjorn**
+- **Tracer**
+- **Widowmaker**
+- **Winston**
+- **Wrecking Ball**
+- **Zarya**
+- **Zenyatta**
